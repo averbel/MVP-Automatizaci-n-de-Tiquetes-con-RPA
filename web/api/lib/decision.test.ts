@@ -11,13 +11,13 @@ describe('Decision Engine', () => {
 
   it('debe filtrar vuelos fuera de presupuesto', () => {
     const result = rankFlights(baseFlights, 90, null);
-    expect(result).toBeDefined();
-    expect(result?.id).toBe('2'); // Solo el de 80 pasa
+    expect(result.length).toBeGreaterThan(0);
+    expect(result[0]?.id).toBe('2'); // Solo el de 80 pasa
   });
 
-  it('debe retornar null si ninguno pasa el presupuesto', () => {
+  it('debe retornar array vacio si ninguno pasa el presupuesto', () => {
     const result = rankFlights(baseFlights, 50, null);
-    expect(result).toBeNull();
+    expect(result.length).toBe(0);
   });
 
   it('debe preferir el vuelo directo si el precio es similar y dentro del presupuesto', () => {
@@ -32,14 +32,14 @@ describe('Decision Engine', () => {
     // Puntaje Avianca (90): 100 - 90 - 0 = 10
     // Puntaje LATAM (80): 100 - 80 - 20 = 0
     const result = rankFlights(flights, 200, null);
-    expect(result?.id).toBe('1');
+    expect(result[0]?.id).toBe('1');
   });
 
   it('debe dar bono a la aerolínea preferida', () => {
     // Sin preferencia gana LATAM (80 USD, 1 escala -> score 0 vs Avianca 100 USD, 0 escalas -> score 0)
     // Con preferencia LATAM, LATAM suma 30 puntos -> score 30
     const result = rankFlights(baseFlights, 200, 'LATAM');
-    expect(result?.id).toBe('2');
-    expect(result?.score).toBe(30);
+    expect(result[0]?.id).toBe('2');
+    expect(result[0]?.score).toBe(30);
   });
 });
