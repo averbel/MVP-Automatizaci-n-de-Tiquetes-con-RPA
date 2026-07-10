@@ -37,22 +37,6 @@ async function runBot(bookingLink, passengerData, idempotencyKey) {
       });
       const page = await context.newPage();
 
-      // Permitimos imágenes y estilos para que la captura final se vea 100% real y profesional
-      // Solo bloqueamos analytics de terceros para mejorar rendimiento
-      await page.route('**/*', (route) => {
-        const url = route.request().url();
-        if (
-          url.includes('google-analytics') ||
-          url.includes('doubleclick') ||
-          url.includes('facebook') ||
-          url.includes('hotjar') ||
-          url.includes('amplitude')
-        ) {
-          return route.abort();
-        }
-        return route.continue();
-      });
-
       // 1. Navegar a los resultados de búsqueda de Kayak
       reachedStep = 'NAVEGANDO_BOOKING_LINK';
       await page.goto(bookingLink, { waitUntil: 'domcontentloaded', timeout: 60000 });
