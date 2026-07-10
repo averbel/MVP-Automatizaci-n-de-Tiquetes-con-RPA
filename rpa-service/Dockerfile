@@ -1,4 +1,4 @@
-FROM node:20-bookworm
+FROM mcr.microsoft.com/playwright:v1.40.0-jammy
 
 # Crear directorio de la app
 WORKDIR /app
@@ -8,9 +8,6 @@ COPY package*.json ./
 
 # Instalar dependencias
 RUN npm ci
-
-# Instalar dependencias del sistema operativo y navegadores para Playwright
-RUN npx playwright install --with-deps chromium
 
 # Copiar el resto del código
 COPY . .
