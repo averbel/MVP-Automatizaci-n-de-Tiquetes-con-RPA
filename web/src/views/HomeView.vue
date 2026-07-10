@@ -272,32 +272,6 @@ const handleSubmit = async () => {
   }
 };
 
-const startPolling = () => {
-  pollInterval = setInterval(async () => {
-    if (estado.value !== 'ESPERANDO_APROBACION') {
-      clearInterval(pollInterval);
-      return;
-    }
-    
-    try {
-      const res = await fetch(`/api/solicitudes/estado?id=${currentSolicitudId.value}`);
-      if (res.ok) {
-        const data = await res.json();
-        if (data.estado === 'APROBADA') {
-          estado.value = 'BUSCANDO_VUELOS';
-          clearInterval(pollInterval);
-          await fetchVuelos();
-        } else if (data.estado === 'RECHAZADA') {
-          alert('Tu solicitud fue rechazada por el jefe.');
-          clearInterval(pollInterval);
-          resetFlow();
-        }
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  }, 3000);
-};
 
 const fetchVuelos = async () => {
   try {
