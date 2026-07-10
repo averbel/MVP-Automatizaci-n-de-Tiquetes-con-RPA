@@ -260,8 +260,8 @@ const handleSubmit = async () => {
     if (res.ok) {
       const data = await res.json();
       currentSolicitudId.value = data.solicitudId; 
-      estado.value = 'ESPERANDO_APROBACION';
-      startPolling();
+      estado.value = 'BUSCANDO_VUELOS';
+      await fetchVuelos();
     } else {
       alert("Error al enviar la solicitud.");
     }

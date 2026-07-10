@@ -65,14 +65,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           centroCostos,
           equipajeRequerido: equipaje ? 'SI' : 'NO',
           preferenciaAerolinea: aerolineaPreferida || null,
-          estado: 'PENDIENTE',
+          estado: 'APROBADA',
           tokenAprobacion,
         }
       });
     });
 
-    // 4. Enviar correo de aprobación
-    await sendApprovalEmail(aprobadorEmail, nombre, destino, tokenAprobacion, solicitud.id);
+    // 4. (Opcional) Enviar correo informativo en lugar de aprobación
+    // await sendApprovalEmail(aprobadorEmail, nombre, destino, tokenAprobacion, solicitud.id);
 
     return res.status(200).json({ success: true, solicitudId: solicitud.id });
   } catch (error) {
