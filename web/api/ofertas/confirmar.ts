@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { prisma } from '../_lib/prisma.js';
+import { prisma } from '../../shared/prisma.js';
 import crypto from 'crypto';
-import { getKayakBookingLink } from '../_lib/kayak.js';
+import { getKayakBookingLink } from '../../shared/kayak.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {

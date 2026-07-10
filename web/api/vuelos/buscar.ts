@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { prisma } from '../_lib/prisma.js';
-import { kayakSearch } from '../_lib/kayak.js';
-import { rankFlights } from '../_lib/decision.js';
+import { prisma } from '../../shared/prisma.js';
+import { kayakSearch } from '../../shared/kayak.js';
+import { rankFlights } from '../../shared/decision.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
