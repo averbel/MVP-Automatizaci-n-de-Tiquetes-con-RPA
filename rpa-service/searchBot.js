@@ -9,7 +9,7 @@ async function searchFlights(origin, destination, dateString) {
   try {
     browser = await chromium.launch({ 
       headless: process.env.HEADLESS !== 'false',
-      args: ['--no-sandbox', '--disable-setuid-sandbox'] 
+      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu'] 
     });
     
     const context = await browser.newContext({
@@ -78,10 +78,14 @@ async function searchFlights(origin, destination, dateString) {
     return flights;
   } catch (error) {
     console.error('[RPA Search] Error en la búsqueda en vivo:', error);
+    
+    // Extraer solo la primera línea del error para que quepa en la UI
+    const shortError = error.message.split('\n')[0].substring(0, 50);
+    
     return [
         {
           id: `rpa-fallback-1`,
-          airline: 'Avianca (Fallback)',
+          airline: `Fallback - Error: ${shortError}`,
           priceUSD: 200,
           departureTime: `${dateString}T08:00:00`,
           arrivalTime: `${dateString}T09:30:00`,
