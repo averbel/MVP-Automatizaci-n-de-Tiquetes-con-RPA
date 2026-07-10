@@ -1,4 +1,4 @@
-import { IgnavFlight } from './ignav';
+import { IgnavFlight } from './ignav.js';
 
 export interface ScoredFlight extends IgnavFlight {
   score: number;

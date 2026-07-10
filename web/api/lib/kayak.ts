@@ -1,4 +1,4 @@
-import { IgnavFlight } from './ignav'; // Reusing the same interface for simplicity
+import { IgnavFlight } from './ignav.js'; // Reusing the same interface for simplicity
 
 const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY || 'your-rapidapi-key';
 const RAPIDAPI_HOST = process.env.RAPIDAPI_HOST || 'kayak-flight-search.p.rapidapi.com';

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { rankFlights, ScoredFlight } from './decision';
-import { IgnavFlight } from './ignav';
+import { rankFlights, ScoredFlight } from './decision.js';
+import { IgnavFlight } from './ignav.js';
 
 describe('Decision Engine', () => {
   const baseFlights: IgnavFlight[] = [
