@@ -24,8 +24,14 @@ async function searchFlights(origin, destination, dateString) {
     console.log(`[RPA Search] URL: ${searchUrl}`);
     
     await page.goto(searchUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
-    
-    await page.waitForTimeout(8000); 
+    // Esperar a que aparezcan resultados, pero máximo 4 segundos para evitar timeout en Vercel
+    try {
+      await page.waitForSelector('.nrc6-wrapper, .resultWrapper, .Base-Results-ResultCard', { timeout: 4000 });
+      // Darle 1 segundo extra para que renderice los precios
+      await page.waitForTimeout(1000);
+    } catch (e) {
+      console.log('[RPA Search] Timeout esperando selectores de vuelos, procediendo...');
+    }
 
     const results = await page.$$('.nrc6-wrapper, .resultWrapper, .Base-Results-ResultCard');
     
