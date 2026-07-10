@@ -70,9 +70,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
 
     // Disparar webhook hacia el servicio RPA (Railway)
-    const RPA_URL = process.env.RPA_URL || 'http://localhost:4000';
+    const RPA_URL = process.env.RPA_API_URL || process.env.RPA_URL || 'http://localhost:4000';
     const RPA_WEBHOOK_SECRET = process.env.RPA_WEBHOOK_SECRET || 'secret-rpa-key';
-    const PUBLIC_URL = process.env.PUBLIC_URL || 'http://localhost:5173';
+    const PUBLIC_URL = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : (process.env.PUBLIC_URL || 'http://localhost:5173');
 
     console.log(`[Webhook -> RPA] Disparando RPA para solicitud ${solicitudId} con idempotency key ${idempotency_key}`);
     console.log(`[RPA INFO] Booking Link: ${bookingLink}`);
