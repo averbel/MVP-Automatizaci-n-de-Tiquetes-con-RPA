@@ -37,18 +37,14 @@ async function runBot(bookingLink, passengerData, idempotencyKey) {
       });
       const page = await context.newPage();
 
-      // Bloquear recursos pesados y analíticas para acelerar la carga en Render a <10s
+      // Permitimos imágenes y estilos para que la captura final se vea 100% real y profesional
+      // Solo bloqueamos analytics de terceros para mejorar rendimiento
       await page.route('**/*', (route) => {
-        const type = route.request().resourceType();
         const url = route.request().url();
-        
-        // Bloquear imágenes, fuentes, media y scripts de tracking/anuncios
         if (
-          ['image', 'font', 'media'].includes(type) ||
           url.includes('google-analytics') ||
           url.includes('doubleclick') ||
           url.includes('facebook') ||
-          url.includes('sentry') ||
           url.includes('hotjar') ||
           url.includes('amplitude')
         ) {
@@ -57,63 +53,72 @@ async function runBot(bookingLink, passengerData, idempotencyKey) {
         return route.continue();
       });
 
-      // 1. Navegar al booking link
+      // 1. Navegar a los resultados de búsqueda de Kayak
       reachedStep = 'NAVEGANDO_BOOKING_LINK';
       await page.goto(bookingLink, { waitUntil: 'domcontentloaded', timeout: 60000 });
       
-      // Tomar captura inicial
-      const initialScreenshot = path.join(screenshotsDir, `${idempotencyKey}_initial_${attempts}.png`);
-      await page.screenshot({ path: initialScreenshot });
+      // Esperar a que los vuelos carguen en pantalla
+      await page.waitForTimeout(4000); 
 
-      // MVP (Prueba de concepto) - Avianca checkout
-      // Aquí van los selectores reales. Como esto es una prueba y los sitios cambian,
-      // usaremos selectores genéricos o buscaremos por texto.
-      // NOTA: Para un bot de producción en Avianca, los selectores varían mucho y requieren mantenimiento continuo.
+      // 2. Dar clic en el primer resultado ("Ver oferta" / "View Deal")
+      reachedStep = 'SELECCIONANDO_VUELO_EN_KAYAK';
+      const dealButton = await page.$('button:has-text("View Deal"), a:has-text("View Deal"), button:has-text("Ver oferta"), a:has-text("Ver oferta"), button:has-text("Select"), a:has-text("Select"), button:has-text("Elegir"), a:has-text("Elegir"), .booking-link');
       
+      let targetPage = page;
+
+      if (dealButton) {
+        console.log('[RPA] Botón "Ver Oferta" encontrado, haciendo clic...');
+        
+        // Al hacer clic, Kayak suele abrir una pestaña nueva con el checkout de la aerolínea
+        const [newPage] = await Promise.all([
+          context.waitForEvent('page').catch(() => page), // Captura la nueva pestaña si se abre
+          dealButton.click()
+        ]);
+        
+        targetPage = newPage;
+        await targetPage.waitForLoadState('domcontentloaded').catch(() => {});
+        await targetPage.waitForTimeout(5000); // Esperar a que el checkout de la aerolínea renderice
+      } else {
+        console.log('[RPA] No se encontró el botón de oferta, intentando rellenar en la página actual...');
+      }
+
       reachedStep = 'LLENANDO_DATOS_PASAJERO';
       
-      // Simulamos que el bot intenta encontrar el formulario de nombre y apellido.
-      // Como no conocemos el HTML exacto de Avianca hoy sin inspeccionarlo,
-      // el bot espera un poco y llena campos si los encuentra por nombre, type, etc.
-      
-      // Esperamos que cargue el DOM
-      await page.waitForTimeout(3000); 
-
-      // Buscar inputs típicos
-      const nameInputs = await page.$$('input[name*="name"], input[id*="name"], input[placeholder*="Nombre"]');
+      // Buscar inputs típicos del checkout de la aerolínea
+      const nameInputs = await targetPage.$$('input[name*="name"], input[id*="name"], input[placeholder*="Nombre"], input[placeholder*="nombre"]');
       if (nameInputs.length > 0) {
         await nameInputs[0].fill(passengerData.nombre.split(' ')[0] || 'Prueba');
       }
 
-      const lastNameInputs = await page.$$('input[name*="lastname"], input[name*="surname"], input[placeholder*="Apellido"]');
+      const lastNameInputs = await targetPage.$$('input[name*="lastname"], input[name*="surname"], input[placeholder*="Apellido"], input[placeholder*="apellido"]');
       if (lastNameInputs.length > 0) {
         const parts = passengerData.nombre.split(' ');
         const lastname = parts.length > 1 ? parts.slice(1).join(' ') : 'Demo';
         await lastNameInputs[0].fill(lastname);
       }
 
-      const docInputs = await page.$$('input[name*="document"], input[name*="docNumber"], input[placeholder*="Documento"]');
+      const docInputs = await targetPage.$$('input[name*="document"], input[name*="docNumber"], input[placeholder*="Documento"], input[placeholder*="documento"]');
       if (docInputs.length > 0) {
         await docInputs[0].fill(passengerData.identificacion || '123456789');
       }
       
-      const emailInputs = await page.$$('input[type="email"], input[name*="email"]');
+      const emailInputs = await targetPage.$$('input[type="email"], input[name*="email"]');
       if (emailInputs.length > 0) {
         await emailInputs[0].fill(passengerData.email || 'demo@example.com');
       }
 
       // Supongamos que damos click en continuar
-      const continueBtns = await page.$$('button:has-text("Continuar"), button:has-text("Siguiente"), .btn-continue');
+      const continueBtns = await targetPage.$$('button:has-text("Continuar"), button:has-text("Siguiente"), .btn-continue');
       if (continueBtns.length > 0) {
         await continueBtns[0].click();
-        await page.waitForTimeout(3000); // esperar transición
+        await targetPage.waitForTimeout(3000); // esperar transición
       }
 
       reachedStep = 'ANTES_DE_PAGO';
       
       // Tomamos la captura final antes del pago
       screenshotPath = path.join(screenshotsDir, `${idempotencyKey}_final_success.png`);
-      await page.screenshot({ path: screenshotPath, fullPage: true });
+      await targetPage.screenshot({ path: screenshotPath, fullPage: true });
 
       success = true;
       console.log(`[RPA] ¡Éxito en el intento ${attempts}!`);
