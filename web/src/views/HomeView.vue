@@ -136,54 +136,66 @@
     <!-- PANTALLA 4: RESULTADOS VUELOS -->
     <div v-else-if="estado === 'SELECCIONANDO_VUELO'" class="relative z-10 min-h-screen p-8 lg:p-24 animate-fade-in-up text-slate-800">
       <div class="max-w-6xl mx-auto">
-        <h2 class="text-4xl font-bold text-white text-glow mb-2">Vuelos Disponibles</h2>
-        <p class="text-slate-300 mb-8 text-lg">La IA ha calificado estas opciones según la política de viajes.</p>
+        <template v-if="opcionesVuelo.length > 0">
+          <h2 class="text-4xl font-bold text-white text-glow mb-2">Vuelos Disponibles</h2>
+          <p class="text-slate-300 mb-8 text-lg">La IA ha calificado estas opciones según la política de viajes.</p>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div v-for="(vuelo, index) in opcionesVuelo" :key="vuelo.id" 
-               class="bg-white rounded-3xl shadow-xl overflow-hidden flex flex-col transform transition hover:-translate-y-2 hover:shadow-2xl"
-               :class="{'ring-4 ring-amber-400': index === 0}">
-            
-            <div v-if="index === 0" class="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-center py-2 font-bold uppercase tracking-wider text-sm">
-              🌟 Recomendación de la IA
-            </div>
-            
-            <div class="p-6 flex-grow space-y-4">
-              <div class="flex justify-between items-center border-b pb-4">
-                <span class="text-2xl font-black text-slate-900">{{ vuelo.airline }}</span>
-                <span class="text-3xl font-bold text-blue-600">${{ vuelo.priceUSD }}</span>
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div v-for="(vuelo, index) in opcionesVuelo" :key="vuelo.id" 
+                 class="bg-white rounded-3xl shadow-xl overflow-hidden flex flex-col transform transition hover:-translate-y-2 hover:shadow-2xl"
+                 :class="{'ring-4 ring-amber-400': index === 0}">
+              
+              <div v-if="index === 0" class="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-center py-2 font-bold uppercase tracking-wider text-sm">
+                ⭐ Recomendación de la IA
               </div>
               
-              <div class="flex justify-between items-center text-sm text-slate-600">
-                <div class="text-center">
-                  <p class="font-bold text-slate-800 text-lg">{{ new Date(vuelo.departureTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }}</p>
-                  <p>Salida</p>
+              <div class="p-6 flex-grow space-y-4">
+                <div class="flex justify-between items-center border-b pb-4">
+                  <span class="text-2xl font-black text-slate-900">{{ vuelo.airline }}</span>
+                  <span class="text-3xl font-bold text-blue-600">${{ vuelo.priceUSD }}</span>
                 </div>
-                <div class="flex-grow text-center px-4">
-                  <p class="text-xs text-slate-400">{{ vuelo.stops === 0 ? 'Directo' : vuelo.stops + ' Escala(s)' }}</p>
-                  <div class="h-px bg-slate-300 w-full relative my-2">
-                    <span class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-slate-400">✈️</span>
+                
+                <div class="flex justify-between items-center text-sm text-slate-600">
+                  <div class="text-center">
+                    <p class="font-bold text-slate-800 text-lg">{{ new Date(vuelo.departureTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }}</p>
+                    <p>Salida</p>
+                  </div>
+                  <div class="flex-grow text-center px-4">
+                    <p class="text-xs text-slate-400">{{ vuelo.stops === 0 ? 'Directo' : vuelo.stops + ' Escala(s)' }}</p>
+                    <div class="h-px bg-slate-300 w-full relative my-2">
+                      <span class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-slate-400">✈️</span>
+                    </div>
+                  </div>
+                  <div class="text-center">
+                    <p class="font-bold text-slate-800 text-lg">{{ new Date(vuelo.arrivalTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }}</p>
+                    <p>Llegada</p>
                   </div>
                 </div>
-                <div class="text-center">
-                  <p class="font-bold text-slate-800 text-lg">{{ new Date(vuelo.arrivalTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }}</p>
-                  <p>Llegada</p>
+
+                <div class="bg-blue-50 p-4 rounded-xl text-sm text-blue-900 border border-blue-100">
+                  <p><strong>Score IA: {{ vuelo.score }}/100</strong></p>
+                  <p class="italic mt-1">"{{ vuelo.explicacion }}"</p>
                 </div>
               </div>
-
-              <div class="bg-blue-50 p-4 rounded-xl text-sm text-blue-900 border border-blue-100">
-                <p><strong>Score IA: {{ vuelo.score }}/100</strong></p>
-                <p class="italic mt-1">"{{ vuelo.explicacion }}"</p>
+              
+              <div class="p-6 bg-slate-50 border-t border-slate-100">
+                <button @click="comprarVuelo(vuelo)" class="w-full bg-slate-900 hover:bg-blue-600 text-white font-bold py-3 rounded-xl transition-colors">
+                  Elegir y Comprar
+                </button>
               </div>
             </div>
-            
-            <div class="p-6 bg-slate-50 border-t border-slate-100">
-              <button @click="comprarVuelo(vuelo)" class="w-full bg-slate-900 hover:bg-blue-600 text-white font-bold py-3 rounded-xl transition-colors">
-                Elegir y Comprar
-              </button>
-            </div>
           </div>
-        </div>
+        </template>
+        <template v-else>
+          <div class="max-w-md mx-auto text-center glass rounded-3xl shadow-2xl p-10 space-y-6">
+            <div class="w-24 h-24 bg-red-500/20 text-red-500 rounded-full flex items-center justify-center mx-auto backdrop-blur-md">
+              <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            </div>
+            <h2 class="text-3xl font-bold text-white">No se encontraron vuelos</h2>
+            <p class="text-slate-300 font-medium">No hay vuelos disponibles para esta ruta y fecha dentro de tu presupuesto. Intenta con otras fechas o destinos.</p>
+            <button @click="resetFlow" class="w-full bg-slate-900 hover:bg-slate-700 text-white font-semibold py-4 rounded-xl transition-colors">Volver al Inicio</button>
+          </div>
+        </template>
       </div>
     </div>
 

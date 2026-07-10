@@ -1,18 +1,15 @@
-FROM node:20-slim
-
-# Instalar chromium nativo (esto incluye todas las dependencias del OS)
-RUN apt-get update && apt-get install -y chromium && rm -rf /var/lib/apt/lists/*
+FROM mcr.microsoft.com/playwright:v1.40.0-jammy
 
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci
+RUN npm ci --omit=dev
 
 COPY . .
 
-# Decirle a Playwright que use el Chromium nativo
-ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
-ENV PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium
+ENV NODE_ENV=production
+ENV HEADLESS=true
 
 EXPOSE 4000
-CMD ["npm", "start"]
+
+CMD ["node", "index.js"]

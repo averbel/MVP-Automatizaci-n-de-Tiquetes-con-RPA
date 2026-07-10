@@ -74,8 +74,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const RPA_WEBHOOK_SECRET = process.env.RPA_WEBHOOK_SECRET || 'secret-rpa-key';
     const PUBLIC_URL = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : (process.env.PUBLIC_URL || 'http://localhost:5173');
 
-    console.log(`[Webhook -> RPA] Disparando RPA para solicitud ${solicitudId} con idempotency key ${idempotency_key}`);
+    console.log(`[Webhook -> RPA] Disparando RPA para solicitud ${solicitudId}`);
+    console.log(`[RPA INFO] Idempotency Key: ${idempotency_key}`);
     console.log(`[RPA INFO] Booking Link: ${bookingLink}`);
+    console.log(`[RPA INFO] RPA URL: ${RPA_URL}`);
+    console.log(`[RPA INFO] Callback URL: ${PUBLIC_URL}/api/webhooks/rpa-result`);
+
+    // Llamada fire-and-forget al servicio RPA en Railway
+    const rpaRequestBody = {
+      bookingLink: bookingLink,
+      passengerData: {
+        nombre: solicitud.trabajador.nombre,
+        identificacion: solicitud.trabajador.identificacion,
+        email: solicitud.trabajador.correo
+      },
+      idempotencyKey: idempotency_key,
+      callbackUrl: `${PUBLIC_URL}/api/webhooks/rpa-result`
+    };
 
     fetch(`${RPA_URL}/api/rpa/comprar`, {
       method: 'POST',
@@ -83,17 +98,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${RPA_WEBHOOK_SECRET}`
       },
-      body: JSON.stringify({
-        bookingLink: bookingLink,
-        passengerData: {
-          nombre: solicitud.trabajador.nombre,
-          identificacion: solicitud.trabajador.identificacion,
-          email: solicitud.trabajador.correo
-        },
-        idempotencyKey: idempotency_key,
-        callbackUrl: `${PUBLIC_URL}/api/webhooks/rpa-result`
-      })
-    }).catch(e => console.error("Error llamando al bot RPA:", e));
+      body: JSON.stringify(rpaRequestBody)
+    }).then(r => {
+      console.log(`[Webhook -> RPA] Respuesta del RPA service: ${r.status}`);
+      return r.text();
+    }).then(t => console.log(`[Webhook -> RPA] Body: ${t}`))
+      .catch(e => console.error("[Webhook -> RPA] Error llamando al bot RPA:", e.message));
 
     return res.status(200).json({ success: true, message: 'Oferta confirmada y RPA iniciado' });
   } catch (error) {

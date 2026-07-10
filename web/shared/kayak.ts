@@ -1,11 +1,5 @@
 import { IgnavFlight } from './ignav.js'; // Reusing the same interface for simplicity
 
-const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY || 'your-rapidapi-key';
-const RAPIDAPI_HOST = process.env.RAPIDAPI_HOST || 'kayak-flight-search.p.rapidapi.com';
-
-// Local proxy fallback for testing, default to RapidAPI
-const API_BASE_URL = process.env.KAYAK_API_URL || `https://${RAPIDAPI_HOST}`;
-
 export const kayakSearch = async (
   origin: string,
   destination: string,
@@ -13,9 +7,15 @@ export const kayakSearch = async (
 ): Promise<IgnavFlight[]> => {
   const dateString = new Date(date).toISOString().split('T')[0];
 
+  const RPA_WEBHOOK_SECRET = process.env.RPA_WEBHOOK_SECRET || 'secret-rpa-key';
+  const rpaUrl = process.env.RPA_API_URL || 'http://localhost:4000';
+  
+  console.log(`[kayakSearch] Buscando vuelos via RPA: ${origin} -> ${destination} para ${dateString}`);
+  console.log(`[kayakSearch] RPA URL: ${rpaUrl}`);
+  
   try {
-    const RPA_WEBHOOK_SECRET = process.env.RPA_WEBHOOK_SECRET || 'secret-rpa-key';
-    const rpaUrl = process.env.RPA_API_URL || 'http://localhost:4000';
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 60000); // 60s timeout
     
     const response = await fetch(`${rpaUrl}/api/rpa/search`, {
       method: 'POST',
@@ -27,13 +27,16 @@ export const kayakSearch = async (
         origin,
         destination,
         date: dateString
-      })
+      }),
+      signal: controller.signal
     });
+    
+    clearTimeout(timeout);
 
     if (!response.ok) {
       const errText = await response.text();
-      console.error('RPA API search failed:', errText);
-      throw new Error(`RPA API Error: ${errText}`);
+      console.error('[kayakSearch] RPA API search failed:', response.status, errText);
+      throw new Error(`RPA API Error ${response.status}: ${errText}`);
     }
 
     const data = await response.json();
@@ -41,10 +44,12 @@ export const kayakSearch = async (
       throw new Error('Invalid response structure from RPA Search');
     }
 
+    console.log(`[kayakSearch] Recibidos ${data.flights.length} vuelos`);
     return data.flights;
 
   } catch (err: any) {
-    console.error('Error fetching from RPA API:', err);
+    console.error('[kayakSearch] Error:', err.message);
+    // Re-lanzar para que el caller lo maneje
     throw err;
   }
 };
