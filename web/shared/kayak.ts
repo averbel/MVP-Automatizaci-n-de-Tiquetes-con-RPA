@@ -15,7 +15,9 @@ export const kayakSearch = async (
 
   try {
     const RPA_WEBHOOK_SECRET = process.env.RPA_WEBHOOK_SECRET || 'secret-rpa-key';
-    const response = await fetch(`http://localhost:4000/api/rpa/search`, {
+    const rpaUrl = process.env.RPA_API_URL || 'http://localhost:4000';
+    
+    const response = await fetch(`${rpaUrl}/api/rpa/search`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
