@@ -8,7 +8,7 @@ const path = require('path');
 async function runBot(bookingLink, passengerData, idempotencyKey) {
   console.log(`[RPA] Iniciando ejecución para la key: ${idempotencyKey}`);
   
-  const MAX_RETRIES = 2;
+  const MAX_RETRIES = 0;
   let attempts = 0;
   let success = false;
   let screenshotPath = '';
@@ -39,7 +39,7 @@ async function runBot(bookingLink, passengerData, idempotencyKey) {
 
       // 1. Navegar al booking link
       reachedStep = 'NAVEGANDO_BOOKING_LINK';
-      await page.goto(bookingLink, { waitUntil: 'domcontentloaded', timeout: 30000 });
+      await page.goto(bookingLink, { waitUntil: 'domcontentloaded', timeout: 60000 });
       
       // Tomar captura inicial
       const initialScreenshot = path.join(screenshotsDir, `${idempotencyKey}_initial_${attempts}.png`);
