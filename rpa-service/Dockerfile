@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/playwright:v1.40.0-jammy
+FROM node:20-bookworm
 
 # Crear directorio de la app
 WORKDIR /app
@@ -7,13 +7,16 @@ WORKDIR /app
 COPY package*.json ./
 
 # Instalar dependencias
-RUN npm install
+RUN npm ci
 
-# Copiar el código de la aplicación
+# Instalar dependencias del sistema operativo y navegadores para Playwright
+RUN npx playwright install --with-deps chromium
+
+# Copiar el resto del código
 COPY . .
 
 # Exponer el puerto
 EXPOSE 4000
 
-# Iniciar la aplicación
+# Comando de inicio
 CMD ["npm", "start"]
