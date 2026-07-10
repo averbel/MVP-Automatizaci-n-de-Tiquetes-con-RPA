@@ -1,0 +1,111 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Trabajador {
+  id               String           @id @default(uuid())
+  nombre           String
+  identificacion   String
+  correo           String           @unique
+  solicitudesViaje SolicitudViaje[]
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+}
+
+model Aprobador {
+  id               String           @id @default(uuid())
+  nombre           String
+  correo           String           @unique
+  solicitudesViaje SolicitudViaje[]
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+}
+
+
+
+model SolicitudViaje {
+  id                    String            @id @default(uuid())
+  trabajadorId          String
+  aprobadorId           String
+  origen                String
+  destino               String
+  fechaSalida           DateTime
+  fechaRegreso          DateTime?
+  presupuestoMaximo     Float
+  centroCostos          String
+  equipajeRequerido     String
+  preferenciaAerolinea  String?
+  estado                String   @default("PENDIENTE")
+  
+  trabajador            Trabajador        @relation(fields: [trabajadorId], references: [id])
+  aprobador             Aprobador         @relation(fields: [aprobadorId], references: [id])
+  
+  ofertaVuelo           OfertaVuelo?
+  transaccionCompra     TransaccionCompra?
+  historialAuditoria    HistorialAuditoria[]
+  
+  tokenAprobacion       String?           @unique
+  
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+}
+
+model OfertaVuelo {
+  id               String         @id @default(uuid())
+  solicitudId      String         @unique
+  ignav_id         String
+  booking_link     String
+  score            Float
+  explicacion      String
+  precio           Float
+  aerolinea        String
+  fechaHoraSalida  DateTime
+  fechaHoraLlegada DateTime
+  escalas          Int            @default(0)
+  
+  solicitud        SolicitudViaje @relation(fields: [solicitudId], references: [id])
+  
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+}
+
+model TransaccionCompra {
+  id                String         @id @default(uuid())
+  solicitudId       String         @unique
+  idempotency_key   String         @unique
+  estado_rpa        String         @default("PENDIENTE") // PENDIENTE, EN_PROGRESO, EXITO, FALLO
+  capturas          String       // URLs de las capturas (JSON stringificado para SQLite)
+  paso_alcanzado    String?
+  
+  solicitud         SolicitudViaje @relation(fields: [solicitudId], references: [id])
+  
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+}
+
+model HistorialAuditoria {
+  id               String         @id @default(uuid())
+  solicitudId      String
+  accion           String
+  detalle          String?
+  capturaAsociada  String?
+  
+  solicitud        SolicitudViaje @relation(fields: [solicitudId], references: [id])
+  
+  createdAt        DateTime       @default(now())
+}
+
+model PoliticaCorporativa {
+  id               String   @id @default(uuid())
+  presupuestoMax   Float
+  aerolineasPermit String // Ej: '["AVIANCA", "LATAM"]'
+  anticipacionDias Int      @default(15)
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
