@@ -28,7 +28,8 @@ async function runBot(bookingLink, passengerData, idempotencyKey) {
     try {
       browser = await chromium.launch({ 
         headless: process.env.HEADLESS !== 'false',
-        args: ['--no-sandbox', '--disable-setuid-sandbox'] 
+        executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || undefined,
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu'] 
       });
       const context = await browser.newContext({
         viewport: { width: 1280, height: 800 },

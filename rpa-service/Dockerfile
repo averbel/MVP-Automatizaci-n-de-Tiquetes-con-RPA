@@ -1,19 +1,18 @@
-FROM mcr.microsoft.com/playwright:v1.40.0-jammy
+FROM node:20-slim
 
-# Crear directorio de la app
+# Instalar chromium nativo (esto incluye todas las dependencias del OS)
+RUN apt-get update && apt-get install -y chromium && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
-# Copiar package.json y package-lock.json
 COPY package*.json ./
-
-# Instalar dependencias
 RUN npm ci
 
-# Copiar el resto del código
 COPY . .
 
-# Exponer el puerto
-EXPOSE 4000
+# Decirle a Playwright que use el Chromium nativo
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+ENV PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium
 
-# Comando de inicio
+EXPOSE 4000
 CMD ["npm", "start"]
