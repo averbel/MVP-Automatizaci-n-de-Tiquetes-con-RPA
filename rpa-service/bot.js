@@ -39,7 +39,7 @@ async function runBot(bookingLink, passengerData, idempotencyKey) {
 
       // 1. Navegar al booking link
       reachedStep = 'NAVEGANDO_BOOKING_LINK';
-      await page.goto(bookingLink, { waitUntil: 'networkidle', timeout: 30000 });
+      await page.goto(bookingLink, { waitUntil: 'domcontentloaded', timeout: 30000 });
       
       // Tomar captura inicial
       const initialScreenshot = path.join(screenshotsDir, `${idempotencyKey}_initial_${attempts}.png`);
