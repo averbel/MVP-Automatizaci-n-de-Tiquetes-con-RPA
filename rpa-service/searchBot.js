@@ -20,6 +20,24 @@ async function searchFlights(origin, destination, dateString) {
     
     const page = await context.newPage();
     
+    // Bloquear recursos pesados para acelerar la carga en Vercel/Render a <5s
+    await page.route('**/*', (route) => {
+      const type = route.request().resourceType();
+      const url = route.request().url();
+      if (
+        ['image', 'font', 'media'].includes(type) ||
+        url.includes('google-analytics') ||
+        url.includes('doubleclick') ||
+        url.includes('facebook') ||
+        url.includes('sentry') ||
+        url.includes('hotjar') ||
+        url.includes('amplitude')
+      ) {
+        return route.abort();
+      }
+      return route.continue();
+    });
+    
     const searchUrl = `https://www.kayak.com/flights/${origin}-${destination}/${dateString}?sort=bestflight_a`;
     console.log(`[RPA Search] URL: ${searchUrl}`);
     

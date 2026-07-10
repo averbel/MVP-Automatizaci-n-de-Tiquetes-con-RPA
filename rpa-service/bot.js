@@ -37,6 +37,26 @@ async function runBot(bookingLink, passengerData, idempotencyKey) {
       });
       const page = await context.newPage();
 
+      // Bloquear recursos pesados y analíticas para acelerar la carga en Render a <10s
+      await page.route('**/*', (route) => {
+        const type = route.request().resourceType();
+        const url = route.request().url();
+        
+        // Bloquear imágenes, fuentes, media y scripts de tracking/anuncios
+        if (
+          ['image', 'font', 'media'].includes(type) ||
+          url.includes('google-analytics') ||
+          url.includes('doubleclick') ||
+          url.includes('facebook') ||
+          url.includes('sentry') ||
+          url.includes('hotjar') ||
+          url.includes('amplitude')
+        ) {
+          return route.abort();
+        }
+        return route.continue();
+      });
+
       // 1. Navegar al booking link
       reachedStep = 'NAVEGANDO_BOOKING_LINK';
       await page.goto(bookingLink, { waitUntil: 'domcontentloaded', timeout: 60000 });
