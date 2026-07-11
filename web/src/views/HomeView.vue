@@ -285,14 +285,7 @@ const handleSubmit = async () => {
       const data = await res.json();
       currentSolicitudId.value = data.solicitudId; 
       estado.value = 'BUSCANDO_VUELOS';
-      // Disparar búsqueda (fire-and-forget, el backend trabaja en background)
-      fetch('/api/vuelos/buscar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ solicitudId: currentSolicitudId.value })
-      }).catch(() => {});
-      // Empezar a pollear el estado
-      startBusquedaPolling();
+      await fetchVuelos();
     } else {
       alert("Error al enviar la solicitud.");
     }
@@ -300,6 +293,42 @@ const handleSubmit = async () => {
     alert("Error de conexión con el servidor.");
   } finally {
     loading.value = false;
+  }
+};
+
+const fetchVuelos = async () => {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 65000);
+    
+    const res = await fetch('/api/vuelos/buscar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ solicitudId: currentSolicitudId.value }),
+      signal: controller.signal
+    });
+    
+    clearTimeout(timeout);
+    
+    if (res.ok) {
+      const data = await res.json();
+      if (data.options && data.options.length > 0) {
+        opcionesVuelo.value = data.options;
+        estado.value = 'SELECCIONANDO_VUELO';
+      } else {
+        estado.value = 'SIN_OPCIONES';
+      }
+    } else {
+      // Si falla, intentar polling como fallback
+      startBusquedaPolling();
+    }
+  } catch (e: any) {
+    if (e.name === 'AbortError') {
+      // Timeout - intentar polling
+      startBusquedaPolling();
+    } else {
+      startBusquedaPolling();
+    }
   }
 };
 
