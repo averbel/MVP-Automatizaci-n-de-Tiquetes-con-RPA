@@ -49,7 +49,7 @@ app.post('/api/rpa/comprar', authMiddleware, async (req, res) => {
   (async () => {
     try {
       console.log(`[RPA] Iniciando bot para key: ${idempotencyKey}...`);
-      const result = await runBot(bookingLink, passengerData, idempotencyKey);
+      const result = await runBot(bookingLink, passengerData, idempotencyKey, callbackUrl);
       console.log(`[RPA] Bot terminó. Éxito: ${result.success}, Paso: ${result.reachedStep}`);
       
       // Llamar al webhook de Vercel con el resultado

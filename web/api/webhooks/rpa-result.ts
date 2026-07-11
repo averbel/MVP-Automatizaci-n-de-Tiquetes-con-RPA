@@ -13,7 +13,7 @@ export default async function handler(req: Request, res: Response) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const { idempotencyKey, success, error, reachedStep, screenshotBase64 } = req.body;
+  const { idempotencyKey, success, error, reachedStep, screenshotBase64, isProgress } = req.body;
 
   if (!idempotencyKey) {
     return res.status(400).json({ error: 'Missing idempotencyKey' });
@@ -29,7 +29,7 @@ export default async function handler(req: Request, res: Response) {
       return res.status(404).json({ error: 'Transaccion no encontrada' });
     }
 
-    if (transaccion.estado_rpa !== 'PENDIENTE' && transaccion.estado_rpa !== 'EN_PROGRESO') {
+    if (!isProgress && transaccion.estado_rpa !== 'PENDIENTE' && transaccion.estado_rpa !== 'EN_PROGRESO') {
       return res.status(200).json({ message: 'Transaccion ya procesada.' });
     }
 
@@ -37,31 +37,43 @@ export default async function handler(req: Request, res: Response) {
     try { capturasArray = JSON.parse(transaccion.capturas || '[]'); } catch { capturasArray = []; }
     if (screenshotBase64) capturasArray.push(screenshotBase64);
 
-    await prisma.$transaction(async (tx) => {
-      await tx.transaccionCompra.update({
+    if (isProgress) {
+      await prisma.transaccionCompra.update({
         where: { id: transaccion.id },
         data: {
-          estado_rpa: success ? 'EXITO' : 'FALLO',
-          paso_alcanzado: reachedStep,
+          estado_rpa: 'EN_PROGRESO',
+          paso_alcanzado: reachedStep || transaccion.paso_alcanzado,
           capturas: JSON.stringify(capturasArray)
         }
       });
+      console.log(`[RPA Result] Progreso screenshot para ${transaccion.solicitudId}: ${reachedStep}`);
+    } else {
+      await prisma.$transaction(async (tx) => {
+        await tx.transaccionCompra.update({
+          where: { id: transaccion.id },
+          data: {
+            estado_rpa: success ? 'EXITO' : 'FALLO',
+            paso_alcanzado: reachedStep,
+            capturas: JSON.stringify(capturasArray)
+          }
+        });
 
-      await tx.solicitudViaje.update({
-        where: { id: transaccion.solicitudId },
-        data: { estado: success ? 'DEMOSTRACION_COMPLETADA' : 'FALLIDA' }
+        await tx.solicitudViaje.update({
+          where: { id: transaccion.solicitudId },
+          data: { estado: success ? 'DEMOSTRACION_COMPLETADA' : 'FALLIDA' }
+        });
+
+        await tx.historialAuditoria.create({
+          data: {
+            solicitudId: transaccion.solicitudId,
+            accion: 'RESULTADO_RPA',
+            detalle: `Exito: ${success}. Paso: ${reachedStep}. Error: ${error || 'Ninguno'}`
+          }
+        });
       });
 
-      await tx.historialAuditoria.create({
-        data: {
-          solicitudId: transaccion.solicitudId,
-          accion: 'RESULTADO_RPA',
-          detalle: `Exito: ${success}. Paso: ${reachedStep}. Error: ${error || 'Ninguno'}`
-        }
-      });
-    });
-
-    console.log(`[RPA Result] Solicitud ${transaccion.solicitudId}: ${success ? 'EXITO' : 'FALLO'}`);
+      console.log(`[RPA Result] Solicitud ${transaccion.solicitudId}: ${success ? 'EXITO' : 'FALLO'}`);
+    }
 
     return res.status(200).json({ success: true });
   } catch (err) {

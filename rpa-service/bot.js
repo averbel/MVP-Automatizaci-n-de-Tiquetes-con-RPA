@@ -4,11 +4,126 @@ const path = require('path');
 
 const SCREENSHOTS_DIR = path.join(__dirname, 'screenshots');
 
-async function runBot(bookingLink, passengerData, idempotencyKey) {
+const RPA_WEBHOOK_SECRET = process.env.RPA_WEBHOOK_SECRET || 'secret-rpa-key';
+
+async function sendProgressScreenshot(callbackUrl, idempotencyKey, step, screenshotBase64) {
+  try {
+    await fetch(callbackUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${RPA_WEBHOOK_SECRET}`
+      },
+      body: JSON.stringify({
+        idempotencyKey,
+        success: false,
+        reachedStep: step,
+        screenshotBase64,
+        isProgress: true
+      })
+    });
+    console.log(`[RPA] Screenshot de progreso enviado: ${step}`);
+  } catch (e) {
+    console.error(`[RPA] Error enviando screenshot de progreso: ${e.message}`);
+  }
+}
+
+async function dismissOverlays(page) {
+  console.log('[RPA] Intentando cerrar overlays...');
+
+  // Cerrar banners de cookies y overlays comunes
+  const dismissSelectors = [
+    'button:has-text("Accept")',
+    'button:has-text("Aceptar")',
+    'button:has-text("OK")',
+    'button:has-text("Got it")',
+    'button:has-text("Entendido")',
+    'button:has-text("Close")',
+    'button:has-text("Cerrar")',
+    '[id*="cookie"] button',
+    '[class*="cookie"] button',
+    '[class*="consent"] button',
+    '[class*="banner"] button',
+    '[id*="consent"] button',
+    '[id*="onetrust"] button',
+    '#onetrust-accept-btn-handler',
+    '[class*="close-button"]',
+    '[aria-label="Close"]',
+    '[aria-label="Cerrar"]'
+  ];
+
+  for (const selector of dismissSelectors) {
+    try {
+      const btn = await page.$(selector);
+      if (btn && await btn.isVisible()) {
+        await btn.click({ timeout: 3000 });
+        console.log(`[RPA] Overlay cerrado: ${selector}`);
+        await page.waitForTimeout(1000);
+      }
+    } catch { /* skip */ }
+  }
+
+  // Ocultar overlays problemáticos con JS
+  await page.evaluate(() => {
+    const overlaySelectors = [
+      '.c-ulo-viewport',
+      '[class*="ulo-viewport"]',
+      '[class*="overlay"]',
+      '[class*="modal-backdrop"]',
+      '[class*="cookie-banner"]',
+      '[id*="onetrust-banner"]',
+      '[class*="fc-consent-root"]'
+    ];
+    overlaySelectors.forEach(sel => {
+      document.querySelectorAll(sel).forEach(el => {
+        el.style.display = 'none';
+        el.style.pointerEvents = 'none';
+        el.style.zIndex = '-1';
+      });
+    });
+  });
+  console.log('[RPA] Overlays ocultados via JS');
+}
+
+async function safeClick(page, element, selector) {
+  // Intentar click normal primero
+  try {
+    await element.click({ timeout: 5000 });
+    console.log(`[RPA] Click exitoso (normal): ${selector}`);
+    return true;
+  } catch (e) {
+    console.log(`[RPA] Click normal falló, intentando force: ${selector}`);
+  }
+
+  // Intentar force click
+  try {
+    await element.click({ force: true, timeout: 5000 });
+    console.log(`[RPA] Click exitoso (force): ${selector}`);
+    return true;
+  } catch (e) {
+    console.log(`[RPA] Force click falló, intentando JS click: ${selector}`);
+  }
+
+  // Intentar click via JS
+  try {
+    await page.evaluate((sel) => {
+      const el = document.querySelector(sel);
+      if (el) el.click();
+    }, selector);
+    console.log(`[RPA] Click exitoso (JS): ${selector}`);
+    return true;
+  } catch (e) {
+    console.log(`[RPA] JS click falló: ${selector}`);
+  }
+
+  return false;
+}
+
+async function runBot(bookingLink, passengerData, idempotencyKey, callbackUrl) {
   console.log(`[RPA] Iniciando ejecución para la key: ${idempotencyKey}`);
   console.log(`[RPA] Link: ${bookingLink}`);
   console.log(`[RPA] Pasajero: ${JSON.stringify(passengerData)}`);
-  
+
   const MAX_RETRIES = 2;
   let attempts = 0;
   let success = false;
@@ -24,20 +139,20 @@ async function runBot(bookingLink, passengerData, idempotencyKey) {
     attempts++;
     console.log(`[RPA] Intento ${attempts}/${MAX_RETRIES + 1}...`);
     let browser = null;
-    
+
     try {
-      browser = await chromium.launch({ 
+      browser = await chromium.launch({
         headless: process.env.HEADLESS !== 'false',
         executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || undefined,
         args: [
-          '--no-sandbox', 
-          '--disable-setuid-sandbox', 
-          '--disable-dev-shm-usage', 
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
           '--disable-gpu',
           '--disable-blink-features=AutomationControlled',
           '--disable-infobars',
           '--window-size=1280,800'
-        ] 
+        ]
       });
 
       const context = await browser.newContext({
@@ -47,7 +162,6 @@ async function runBot(bookingLink, passengerData, idempotencyKey) {
         timezoneId: 'America/Bogota'
       });
 
-      // Anti-detección
       await context.addInitScript(() => {
         Object.defineProperty(navigator, 'webdriver', { get: () => false });
         Object.defineProperty(navigator, 'languages', { get: () => ['es-CO', 'es', 'en-US'] });
@@ -64,15 +178,24 @@ async function runBot(bookingLink, passengerData, idempotencyKey) {
       await page.goto(bookingLink, { waitUntil: 'domcontentloaded', timeout: 60000 });
       await page.waitForTimeout(5000);
 
+      await dismissOverlays(page);
+
       // Screenshot del paso 1
-      await page.screenshot({ path: path.join(SCREENSHOTS_DIR, `${idempotencyKey}_p1_kayak.png`) });
+      const p1Screenshot = path.join(SCREENSHOTS_DIR, `${idempotencyKey}_p1_kayak.png`);
+      await page.screenshot({ path: p1Screenshot });
+
+      if (callbackUrl) {
+        const p1Data = fs.readFileSync(p1Screenshot);
+        await sendProgressScreenshot(callbackUrl, idempotencyKey, 'NAVEGANDO_KAYAK',
+          `data:image/png;base64,${p1Data.toString('base64')}`);
+      }
 
       // ============================================
-      // PASO 2: Buscar y hacer clic en "View Deal" / "Ver oferta"
+      // PASO 2: Buscar y hacer clic en "View Deal"
       // ============================================
       reachedStep = 'SELECCIONANDO_OFERTA';
       console.log('[RPA] Buscando botón de oferta...');
-      
+
       const dealButtonSelectors = [
         'button:has-text("View Deal")',
         'a:has-text("View Deal")',
@@ -90,39 +213,53 @@ async function runBot(bookingLink, passengerData, idempotencyKey) {
       ];
 
       let dealButton = null;
+      let matchedSelector = '';
       for (const selector of dealButtonSelectors) {
         dealButton = await page.$(selector);
         if (dealButton) {
+          matchedSelector = selector;
           console.log(`[RPA] Botón encontrado con selector: ${selector}`);
           break;
         }
       }
-      
+
       let targetPage = page;
       let airlineCheckoutUrl = '';
 
       if (dealButton) {
         console.log('[RPA] Haciendo clic en botón de oferta...');
-        
+
+        await dismissOverlays(page);
+
         const [newPage] = await Promise.all([
           context.waitForEvent('page', { timeout: 15000 }).catch(() => null),
-          dealButton.click()
+          safeClick(page, dealButton, matchedSelector)
         ]);
-        
+
         if (newPage) {
           targetPage = newPage;
           await targetPage.waitForLoadState('domcontentloaded', { timeout: 30000 }).catch(() => {});
           airlineCheckoutUrl = targetPage.url();
           console.log(`[RPA] Nueva pestaña abierta: ${airlineCheckoutUrl}`);
         }
-        
-        await targetPage.waitForTimeout(6000); // Esperar checkout
+
+        await targetPage.waitForTimeout(6000);
+        await dismissOverlays(targetPage);
       } else {
         console.log('[RPA] No se encontró botón de oferta, trabajando en la página actual.');
       }
 
       // Screenshot del paso 2
-      await targetPage.screenshot({ path: path.join(SCREENSHOTS_DIR, `${idempotencyKey}_p2_checkout.png`) }).catch(() => {});
+      const p2Screenshot = path.join(SCREENSHOTS_DIR, `${idempotencyKey}_p2_checkout.png`);
+      await targetPage.screenshot({ path: p2Screenshot }).catch(() => {});
+
+      if (callbackUrl) {
+        try {
+          const p2Data = fs.readFileSync(p2Screenshot);
+          await sendProgressScreenshot(callbackUrl, idempotencyKey, 'SELECCIONANDO_OFERTA',
+            `data:image/png;base64,${p2Data.toString('base64')}`);
+        } catch { /* screenshot no disponible */ }
+      }
 
       // ============================================
       // PASO 3: Llenar datos del pasajero
@@ -137,18 +274,16 @@ async function runBot(bookingLink, passengerData, idempotencyKey) {
       const identificacion = passengerData.identificacion || '123456789';
       const email = passengerData.email || 'demo@example.com';
 
-      // Función auxiliar para llenar un campo con múltiples selectores
       async function fillField(selectors, value) {
         for (const selector of selectors) {
           const el = await targetPage.$(selector);
           if (el) {
             try {
-              await el.click({ clickCount: 3 }); // Seleccionar todo
+              await el.click({ clickCount: 3, force: true });
               await el.fill(value);
               console.log(`[RPA] Campo llenado con selector: ${selector}`);
               return true;
             } catch (e) {
-              // Intentar con type en vez de fill
               try {
                 await el.type(value, { delay: 50 });
                 return true;
@@ -159,64 +294,49 @@ async function runBot(bookingLink, passengerData, idempotencyKey) {
         return false;
       }
 
-      // Llenar nombre
       await fillField([
-        'input[name*="firstName"]',
-        'input[name*="first_name"]',
-        'input[id*="firstName"]',
-        'input[id*="first_name"]',
-        'input[placeholder*="Nombre"]',
-        'input[placeholder*="nombre"]',
-        'input[placeholder*="First"]',
-        'input[placeholder*="first"]',
+        'input[name*="firstName"]', 'input[name*="first_name"]',
+        'input[id*="firstName"]', 'input[id*="first_name"]',
+        'input[placeholder*="Nombre"]', 'input[placeholder*="nombre"]',
+        'input[placeholder*="First"]', 'input[placeholder*="first"]',
         'input[name*="name"]:not([name*="last"]):not([name*="holder"])',
-        '#passenger firstName',
-        '[data-testid*="firstName"]',
-        '[data-testid*="first-name"]'
+        '[data-testid*="firstName"]', '[data-testid*="first-name"]'
       ], primerNombre);
 
-      // Llenar apellido
       await fillField([
-        'input[name*="lastName"]',
-        'input[name*="last_name"]',
-        'input[name*="surname"]',
-        'input[id*="lastName"]',
-        'input[id*="last_name"]',
-        'input[placeholder*="Apellido"]',
-        'input[placeholder*="apellido"]',
-        'input[placeholder*="Last"]',
-        'input[placeholder*="last"]',
-        'input[name*="lastname"]',
-        '[data-testid*="lastName"]',
-        '[data-testid*="last-name"]'
+        'input[name*="lastName"]', 'input[name*="last_name"]',
+        'input[name*="surname"]', 'input[id*="lastName"]',
+        'input[id*="last_name"]', 'input[placeholder*="Apellido"]',
+        'input[placeholder*="apellido"]', 'input[placeholder*="Last"]',
+        'input[placeholder*="last"]', 'input[name*="lastname"]',
+        '[data-testid*="lastName"]', '[data-testid*="last-name"]'
       ], apellido);
 
-      // Llenar documento
       await fillField([
-        'input[name*="document"]',
-        'input[name*="docNumber"]',
-        'input[name*="passport"]',
-        'input[id*="document"]',
-        'input[placeholder*="Documento"]',
-        'input[placeholder*="documento"]',
-        'input[placeholder*="Passport"]',
-        'input[placeholder*="ID"]',
-        '[data-testid*="document"]',
-        '[data-testid*="passport"]'
+        'input[name*="document"]', 'input[name*="docNumber"]',
+        'input[name*="passport"]', 'input[id*="document"]',
+        'input[placeholder*="Documento"]', 'input[placeholder*="documento"]',
+        'input[placeholder*="Passport"]', 'input[placeholder*="ID"]',
+        '[data-testid*="document"]', '[data-testid*="passport"]'
       ], identificacion);
 
-      // Llenar email
       await fillField([
-        'input[type="email"]',
-        'input[name*="email"]',
-        'input[id*="email"]',
-        'input[placeholder*="Email"]',
-        'input[placeholder*="email"]',
-        'input[placeholder*="correo"]',
+        'input[type="email"]', 'input[name*="email"]',
+        'input[id*="email"]', 'input[placeholder*="Email"]',
+        'input[placeholder*="email"]', 'input[placeholder*="correo"]',
         '[data-testid*="email"]'
       ], email);
 
-      await targetPage.screenshot({ path: path.join(SCREENSHOTS_DIR, `${idempotencyKey}_p3_form.png`) }).catch(() => {});
+      const p3Screenshot = path.join(SCREENSHOTS_DIR, `${idempotencyKey}_p3_form.png`);
+      await targetPage.screenshot({ path: p3Screenshot }).catch(() => {});
+
+      if (callbackUrl) {
+        try {
+          const p3Data = fs.readFileSync(p3Screenshot);
+          await sendProgressScreenshot(callbackUrl, idempotencyKey, 'LLENANDO_DATOS_PASAJERO',
+            `data:image/png;base64,${p3Data.toString('base64')}`);
+        } catch { /* skip */ }
+      }
 
       // ============================================
       // PASO 4: Intentar continuar
@@ -225,40 +345,42 @@ async function runBot(bookingLink, passengerData, idempotencyKey) {
       console.log('[RPA] Buscando botón de continuar...');
 
       const continueSelectors = [
-        'button:has-text("Continuar")',
-        'button:has-text("Continue")',
-        'button:has-text("Siguiente")',
-        'button:has-text("Next")',
-        'button:has-text("Proceed")',
-        'button:has-text("Review")',
+        'button:has-text("Continuar")', 'button:has-text("Continue")',
+        'button:has-text("Siguiente")', 'button:has-text("Next")',
+        'button:has-text("Proceed")', 'button:has-text("Review")',
         'button:has-text("Resumen")',
-        '.btn-continue',
-        '[class*="continue"]',
-        '[class*="Continue"]',
-        '[data-testid*="continue"]',
-        '[data-testid*="Continue"]'
+        '.btn-continue', '[class*="continue"]', '[class*="Continue"]',
+        '[data-testid*="continue"]', '[data-testid*="Continue"]'
       ];
 
       let continueClicked = false;
       for (const selector of continueSelectors) {
         const btn = await targetPage.$(selector);
         if (btn) {
-          await btn.click();
-          continueClicked = true;
-          console.log(`[RPA] Click en continuar con selector: ${selector}`);
+          await dismissOverlays(targetPage);
+          continueClicked = await safeClick(targetPage, btn, selector);
           break;
         }
       }
 
       if (continueClicked) {
-        await targetPage.waitForTimeout(5000); // Esperar transición de pantalla
+        await targetPage.waitForTimeout(5000);
       }
 
       // Screenshot del paso 4
-      await targetPage.screenshot({ path: path.join(SCREENSHOTS_DIR, `${idempotencyKey}_p4_after_continue.png`), fullPage: true }).catch(() => {});
+      const p4Screenshot = path.join(SCREENSHOTS_DIR, `${idempotencyKey}_p4_after_continue.png`);
+      await targetPage.screenshot({ path: p4Screenshot, fullPage: true }).catch(() => {});
+
+      if (callbackUrl) {
+        try {
+          const p4Data = fs.readFileSync(p4Screenshot);
+          await sendProgressScreenshot(callbackUrl, idempotencyKey, 'PRESIONANDO_CONTINUAR',
+            `data:image/png;base64,${p4Data.toString('base64')}`);
+        } catch { /* skip */ }
+      }
 
       // ============================================
-      // PASO 5: Captura final (antes de pago real - NO hacemos clic en pagar)
+      // PASO 5: Captura final
       // ============================================
       reachedStep = 'ANTES_DE_PAGO';
       console.log('[RPA] Captura final antes del pago (NO se presiona pagar por seguridad).');
@@ -267,13 +389,12 @@ async function runBot(bookingLink, passengerData, idempotencyKey) {
       await targetPage.screenshot({ path: screenshotPath, fullPage: true });
 
       success = true;
-      console.log(`[RPA] ¡Éxito en el intento ${attempts}!`);
-      
+      console.log(`[RPA] Éxito en el intento ${attempts}!`);
+
     } catch (error) {
       errorMsg = error.message;
       console.error(`[RPA] Error en intento ${attempts}:`, errorMsg);
-      
-      // Tomar captura de error
+
       if (browser) {
         try {
           const contexts = browser.contexts();
@@ -283,15 +404,21 @@ async function runBot(bookingLink, passengerData, idempotencyKey) {
               const errorScreenshot = path.join(SCREENSHOTS_DIR, `${idempotencyKey}_error_${attempts}.png`);
               await pages[0].screenshot({ path: errorScreenshot }).catch(() => {});
               screenshotPath = errorScreenshot;
+
+              if (callbackUrl) {
+                const errData = fs.readFileSync(errorScreenshot);
+                await sendProgressScreenshot(callbackUrl, idempotencyKey, reachedStep,
+                  `data:image/png;base64,${errData.toString('base64')}`);
+              }
             }
           }
         } catch (e) {
           console.error('[RPA] No se pudo tomar captura del error');
         }
       }
-      
+
       if (attempts <= MAX_RETRIES) {
-        console.log(`[RPA] Reintentando en 3 segundos...`);
+        console.log('[RPA] Reintentando en 3 segundos...');
         await new Promise(resolve => setTimeout(resolve, 3000));
       } else {
         console.error(`[RPA] Se alcanzó el límite de reintentos (${MAX_RETRIES}).`);
@@ -303,7 +430,7 @@ async function runBot(bookingLink, passengerData, idempotencyKey) {
     }
   }
 
-  // Convertir captura a base64 para enviarla al webhook
+  // Screenshot final como base64
   let screenshotBase64 = null;
   if (screenshotPath && fs.existsSync(screenshotPath)) {
     try {
@@ -322,6 +449,4 @@ async function runBot(bookingLink, passengerData, idempotencyKey) {
   };
 }
 
-module.exports = {
-  runBot
-};
+module.exports = { runBot };
