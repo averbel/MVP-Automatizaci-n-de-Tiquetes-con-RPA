@@ -133,6 +133,18 @@
       </div>
     </div>
 
+    <!-- PANTALLA 3.5: SIN OPCIONES -->
+    <div v-else-if="estado === 'SIN_OPCIONES'" class="relative z-10 min-h-screen flex items-center justify-center p-4">
+      <div class="max-w-md w-full glass rounded-3xl shadow-2xl p-10 text-center space-y-6 animate-fade-in-up">
+        <div class="w-24 h-24 bg-red-500/20 text-red-500 rounded-full flex items-center justify-center mx-auto backdrop-blur-md">
+          <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+        </div>
+        <h2 class="text-3xl font-bold text-slate-900">No se encontraron vuelos</h2>
+        <p class="text-slate-700 font-medium">No hay vuelos disponibles para esta ruta y fecha dentro de tu presupuesto. Intenta con otras fechas o destinos.</p>
+        <button @click="resetFlow" class="w-full bg-slate-900 hover:bg-slate-700 text-white font-semibold py-4 rounded-xl transition-colors">Volver al Inicio</button>
+      </div>
+    </div>
+
     <!-- PANTALLA 4: RESULTADOS VUELOS -->
     <div v-else-if="estado === 'SELECCIONANDO_VUELO'" class="relative z-10 min-h-screen p-8 lg:p-24 animate-fade-in-up text-slate-800">
       <div class="max-w-6xl mx-auto">
@@ -237,7 +249,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 
-const estado = ref('FORM'); // FORM, ESPERANDO_APROBACION, BUSCANDO_VUELOS, SELECCIONANDO_VUELO, RPA_EJECUTANDO, RPA_COMPLETADO
+const estado = ref('FORM'); // FORM, BUSCANDO_VUELOS, SELECCIONANDO_VUELO, RPA_EJECUTANDO, RPA_COMPLETADO, SIN_OPCIONES
 const loading = ref(false);
 const currentSolicitudId = ref('');
 const opcionesVuelo = ref<any[]>([]);
@@ -273,7 +285,14 @@ const handleSubmit = async () => {
       const data = await res.json();
       currentSolicitudId.value = data.solicitudId; 
       estado.value = 'BUSCANDO_VUELOS';
-      await fetchVuelos();
+      // Disparar búsqueda (fire-and-forget, el backend trabaja en background)
+      fetch('/api/vuelos/buscar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ solicitudId: currentSolicitudId.value })
+      }).catch(() => {});
+      // Empezar a pollear el estado
+      startBusquedaPolling();
     } else {
       alert("Error al enviar la solicitud.");
     }
@@ -284,27 +303,33 @@ const handleSubmit = async () => {
   }
 };
 
-
-const fetchVuelos = async () => {
-  try {
-    const res = await fetch('/api/vuelos/buscar', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ solicitudId: currentSolicitudId.value })
-    });
-    
-    if (res.ok) {
-      const data = await res.json();
-      opcionesVuelo.value = data.options || [];
-      estado.value = 'SELECCIONANDO_VUELO';
-    } else {
-      alert("Error al buscar vuelos.");
-      resetFlow();
+const startBusquedaPolling = () => {
+  pollInterval = setInterval(async () => {
+    if (estado.value !== 'BUSCANDO_VUELOS') {
+      clearInterval(pollInterval);
+      return;
     }
-  } catch (e) {
-    alert("Error de red buscando vuelos.");
-    resetFlow();
-  }
+    try {
+      const res = await fetch(`/api/solicitudes/estado?id=${currentSolicitudId.value}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.estado === 'OPCIONES_LISTAS' && data.opciones && data.opciones.length > 0) {
+          opcionesVuelo.value = data.opciones;
+          estado.value = 'SELECCIONANDO_VUELO';
+          clearInterval(pollInterval);
+        } else if (data.estado === 'SIN_OPCIONES') {
+          estado.value = 'SIN_OPCIONES';
+          clearInterval(pollInterval);
+        } else if (data.estado === 'FALLIDA') {
+          alert('Error al buscar vuelos. Intenta de nuevo.');
+          clearInterval(pollInterval);
+          resetFlow();
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }, 2000);
 };
 
 const comprarVuelo = async (vuelo: any) => {
@@ -358,6 +383,7 @@ const startRpaPolling = () => {
 };
 
 const resetFlow = () => {
+  if (pollInterval) clearInterval(pollInterval);
   estado.value = 'FORM';
   opcionesVuelo.value = [];
   capturaResult.value = null;
