@@ -298,37 +298,26 @@ const handleSubmit = async () => {
 
 const fetchVuelos = async () => {
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 65000);
-    
     const res = await fetch('/api/vuelos/buscar', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ solicitudId: currentSolicitudId.value }),
-      signal: controller.signal
+      body: JSON.stringify({ solicitudId: currentSolicitudId.value })
     });
     
-    clearTimeout(timeout);
+    const data = await res.json();
     
-    if (res.ok) {
-      const data = await res.json();
-      if (data.options && data.options.length > 0) {
-        opcionesVuelo.value = data.options;
-        estado.value = 'SELECCIONANDO_VUELO';
-      } else {
-        estado.value = 'SIN_OPCIONES';
-      }
+    if (data.options && data.options.length > 0) {
+      opcionesVuelo.value = data.options;
+      estado.value = 'SELECCIONANDO_VUELO';
+    } else if (data.error) {
+      estado.value = 'SIN_OPCIONES';
     } else {
-      // Si falla, intentar polling como fallback
-      startBusquedaPolling();
+      estado.value = 'SIN_OPCIONES';
     }
   } catch (e: any) {
-    if (e.name === 'AbortError') {
-      // Timeout - intentar polling
-      startBusquedaPolling();
-    } else {
-      startBusquedaPolling();
-    }
+    // Si el fetch falla (timeout de Vercel), intentar polling
+    console.error('Fetch error, trying polling:', e.message);
+    startBusquedaPolling();
   }
 };
 
