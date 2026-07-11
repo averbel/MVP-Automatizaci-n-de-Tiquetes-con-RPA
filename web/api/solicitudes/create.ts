@@ -1,64 +1,41 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { Request, Response } from 'express';
 import { prisma } from '../../shared/prisma.js';
-import { sendApprovalEmail } from '../../shared/email.js';
 import crypto from 'crypto';
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: Request, res: Response) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
     const {
-      nombre,
-      identificacion,
-      email,
-      aprobadorEmail,
-      origen,
-      destino,
-      fechaSalida,
-      fechaRegreso,
-      presupuesto,
-      centroCostos,
-      aerolineaPreferida,
-      equipaje
+      nombre, identificacion, email, aprobadorEmail,
+      origen, destino, fechaSalida, fechaRegreso,
+      presupuesto, centroCostos, aerolineaPreferida, equipaje
     } = req.body;
 
-    // Generar un token único para la aprobación
     const tokenAprobacion = crypto.randomBytes(32).toString('hex');
 
-    // Transacción para asegurar la integridad
     const solicitud = await prisma.$transaction(async (tx) => {
-      // 1. Obtener o crear trabajador
       let trabajador = await tx.trabajador.findUnique({ where: { correo: email } });
       if (!trabajador) {
         trabajador = await tx.trabajador.create({
-          data: {
-            nombre,
-            identificacion,
-            correo: email,
-          }
+          data: { nombre, identificacion, correo: email }
         });
       }
 
-      // 2. Obtener o crear aprobador
       let aprobador = await tx.aprobador.findUnique({ where: { correo: aprobadorEmail } });
       if (!aprobador) {
         aprobador = await tx.aprobador.create({
-          data: {
-            nombre: 'Aprobador', // Podemos mejorar esto si lo pedimos en el form
-            correo: aprobadorEmail,
-          }
+          data: { nombre: 'Aprobador', correo: aprobadorEmail }
         });
       }
 
-      // 3. Crear solicitud
       return await tx.solicitudViaje.create({
         data: {
           trabajadorId: trabajador.id,
           aprobadorId: aprobador.id,
-          origen,
-          destino,
+          origen, destino,
           fechaSalida: new Date(fechaSalida),
           fechaRegreso: fechaRegreso ? new Date(fechaRegreso) : null,
           presupuestoMaximo: parseFloat(presupuesto),
@@ -70,9 +47,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
       });
     });
-
-    // 4. (Opcional) Enviar correo informativo en lugar de aprobación
-    // await sendApprovalEmail(aprobadorEmail, nombre, destino, tokenAprobacion, solicitud.id);
 
     return res.status(200).json({ success: true, solicitudId: solicitud.id });
   } catch (error) {

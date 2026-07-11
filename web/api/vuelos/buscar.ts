@@ -1,17 +1,14 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { Request, Response } from 'express';
 import { prisma } from '../../shared/prisma.js';
 import { kayakSearch } from '../../shared/kayak.js';
 import { rankFlights } from '../../shared/decision.js';
 
-export const maxDuration = 30;
-
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: Request, res: Response) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   const { solicitudId } = req.body;
-
   if (!solicitudId) {
     return res.status(400).json({ error: 'Missing solicitudId' });
   }
@@ -35,7 +32,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       data: { estado: 'BUSCANDO' }
     });
 
-    console.log(`[buscar] Búsqueda para solicitud ${solicitudId}...`);
+    console.log(`[buscar] Busqueda para solicitud ${solicitudId}...`);
     const vuelos = await kayakSearch(solicitud.origen, solicitud.destino, solicitud.fechaSalida);
     console.log(`[buscar] ${vuelos.length} vuelos recibidos`);
 
@@ -61,7 +58,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({ success: true, message: 'Opciones encontradas', options: bestFlights });
   } catch (error: any) {
     console.error('[buscar] Error:', error.message);
-    console.error('[buscar] Stack:', error.stack);
     try {
       await prisma.solicitudViaje.update({
         where: { id: solicitudId },
