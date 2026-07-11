@@ -1,5 +1,9 @@
 import express from 'express';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 import createSolicitud from './api/solicitudes/create';
 import estadoSolicitud from './api/solicitudes/estado';
