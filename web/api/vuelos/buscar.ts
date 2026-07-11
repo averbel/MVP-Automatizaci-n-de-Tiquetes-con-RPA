@@ -1,9 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { prisma } from '../../shared/prisma.js';
-import { kayakSearch } from '../../shared/kayak.js';
-import { rankFlights } from '../../shared/decision.js';
+import { PrismaClient } from '@prisma/client';
 
-export const maxDuration = 30;
+const prisma = new PrismaClient();
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -36,13 +34,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
 
     console.log(`[buscar] Búsqueda para solicitud ${solicitudId}...`);
-    const vuelos = await kayakSearch(solicitud.origen, solicitud.destino, solicitud.fechaSalida);
-    console.log(`[buscar] ${vuelos.length} vuelos recibidos`);
 
-    const bestFlights = rankFlights(vuelos, solicitud.presupuestoMaximo, solicitud.preferenciaAerolinea);
-    console.log(`[buscar] ${bestFlights.length} opciones rankeadas`);
+    const RPA_WEBHOOK_SECRET = process.env.RPA_WEBHOOK_SECRET || 'secret-rpa-key';
+    const rpaUrl = process.env.RPA_API_URL || 'http://localhost:4000';
+    const dateString = new Date(solicitud.fechaSalida).toISOString().split('T')[0];
 
-    if (bestFlights.length === 0) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 60000);
+
+    const response = await fetch(`${rpaUrl}/api/rpa/search`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${RPA_WEBHOOK_SECRET}`
+      },
+      body: JSON.stringify({
+        origin: solicitud.origen,
+        destination: solicitud.destino,
+        date: dateString
+      }),
+      signal: controller.signal
+    });
+
+    clearTimeout(timeout);
+
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error('[buscar] RPA API search failed:', response.status, errText);
+      throw new Error(`RPA API Error ${response.status}: ${errText}`);
+    }
+
+    const data = await response.json();
+    console.log(`[buscar] Recibidos ${data.flights?.length || 0} vuelos`);
+
+    if (!data.success || !data.flights || data.flights.length === 0) {
       await prisma.solicitudViaje.update({
         where: { id: solicitud.id },
         data: { estado: 'SIN_OPCIONES' }
@@ -50,22 +75,44 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ success: true, message: 'No options found', options: [] });
     }
 
+    const presupuestoMax = solicitud.presupuestoMaximo;
+    const prefAerolinea = solicitud.preferenciaAerolinea;
+
+    const scored = data.flights
+      .filter((f: any) => f.priceUSD <= presupuestoMax)
+      .map((f: any) => {
+        let score = 100 - f.priceUSD - (f.stops * 20);
+        if (prefAerolinea && f.airline.toUpperCase() === prefAerolinea.toUpperCase()) score += 30;
+        return { ...f, score, explicacion: `$${f.priceUSD}, ${f.stops === 0 ? 'directo' : f.stops + ' escalas'}` };
+      })
+      .sort((a: any, b: any) => b.score - a.score);
+
+    if (scored.length === 0) {
+      await prisma.solicitudViaje.update({
+        where: { id: solicitud.id },
+        data: { estado: 'SIN_OPCIONES' }
+      });
+      return res.status(200).json({ success: true, message: 'No options within budget', options: [] });
+    }
+
     await prisma.solicitudViaje.update({
       where: { id: solicitud.id },
-      data: { 
+      data: {
         estado: 'OPCIONES_LISTAS',
-        preferenciaAerolinea: JSON.stringify(bestFlights)
+        preferenciaAerolinea: JSON.stringify(scored)
       }
     });
 
-    return res.status(200).json({ success: true, message: 'Opciones encontradas', options: bestFlights });
+    return res.status(200).json({ success: true, message: 'Opciones encontradas', options: scored });
   } catch (error: any) {
     console.error('[buscar] Error:', error.message);
     console.error('[buscar] Stack:', error.stack);
-    await prisma.solicitudViaje.update({
-      where: { id: solicitudId },
-      data: { estado: 'FALLIDA' }
-    }).catch(() => {});
+    try {
+      await prisma.solicitudViaje.update({
+        where: { id: solicitudId },
+        data: { estado: 'FALLIDA' }
+      });
+    } catch (_) {}
     return res.status(200).json({ success: false, error: 'Search failed', options: [] });
   }
 }
