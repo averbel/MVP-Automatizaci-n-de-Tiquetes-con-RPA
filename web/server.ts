@@ -32,7 +32,7 @@ app.post('/api/ofertas/confirmar', confirmarOferta);
 app.post('/api/vuelos/buscar', buscarVuelos);
 app.post('/api/webhooks/rpa-result', webhookRpaResult);
 
-const distPath = path.join(__dirname, 'dist');
+const distPath = path.join(__dirname, '..', 'dist');
 app.use(express.static(distPath));
 app.get('/{*splat}', (_req, res) => {
   res.sendFile(path.join(distPath, 'index.html'));
