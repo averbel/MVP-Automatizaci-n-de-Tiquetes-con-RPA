@@ -3,6 +3,8 @@ import { prisma } from '../../shared/prisma.js';
 import { kayakSearch } from '../../shared/kayak.js';
 import { rankFlights } from '../../shared/decision.js';
 
+export const config = { maxDuration: 30 };
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
