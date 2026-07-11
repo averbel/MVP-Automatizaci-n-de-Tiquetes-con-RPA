@@ -33,7 +33,7 @@ export const kayakSearch = async (
       throw new Error(`RPA API Error ${response.status}: ${errText}`);
     }
 
-    const data = await response.json();
+    const data: any = await response.json();
     if (!data?.success || !data?.flights) {
       throw new Error('Invalid response from RPA Search');
     }

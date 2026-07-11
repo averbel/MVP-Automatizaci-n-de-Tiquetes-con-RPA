@@ -5,14 +5,14 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-import createSolicitud from './api/solicitudes/create';
-import estadoSolicitud from './api/solicitudes/estado';
-import aceptarSolicitud from './api/aprobacion/aceptar';
-import rechazarSolicitud from './api/aprobacion/rechazar';
-import obtenerOferta from './api/ofertas/obtener';
-import confirmarOferta from './api/ofertas/confirmar';
-import buscarVuelos from './api/vuelos/buscar';
-import webhookRpaResult from './api/webhooks/rpa-result';
+import createSolicitud from './api/solicitudes/create.js';
+import estadoSolicitud from './api/solicitudes/estado.js';
+import aceptarSolicitud from './api/aprobacion/aceptar.js';
+import rechazarSolicitud from './api/aprobacion/rechazar.js';
+import obtenerOferta from './api/ofertas/obtener.js';
+import confirmarOferta from './api/ofertas/confirmar.js';
+import buscarVuelos from './api/vuelos/buscar.js';
+import webhookRpaResult from './api/webhooks/rpa-result.js';
 
 const app = express();
 
