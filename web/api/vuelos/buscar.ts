@@ -61,6 +61,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({ success: true, message: 'Opciones encontradas', options: bestFlights });
   } catch (error: any) {
     console.error('[buscar] Error:', error.message);
+    console.error('[buscar] Stack:', error.stack);
     await prisma.solicitudViaje.update({
       where: { id: solicitudId },
       data: { estado: 'FALLIDA' }
