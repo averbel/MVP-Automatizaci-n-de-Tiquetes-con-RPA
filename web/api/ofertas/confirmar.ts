@@ -79,7 +79,12 @@ export default async function handler(req: Request, res: Response) {
         passengerData: {
           nombre: solicitud.trabajador.nombre,
           identificacion: solicitud.trabajador.identificacion,
-          email: solicitud.trabajador.correo
+          email: solicitud.trabajador.correo,
+          telefono: solicitud.trabajador.telefono || '',
+          fechaNacimiento: solicitud.trabajador.fechaNacimiento
+            ? solicitud.trabajador.fechaNacimiento.toISOString().split('T')[0]
+            : '',
+          genero: solicitud.trabajador.genero || ''
         },
         idempotencyKey: idempotency_key,
         callbackUrl: `${PUBLIC_URL}/api/webhooks/rpa-result`

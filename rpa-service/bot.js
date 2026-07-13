@@ -273,8 +273,12 @@ async function runBot(bookingLink, passengerData, idempotencyKey, callbackUrl) {
       const apellido = parts.length > 1 ? parts.slice(1).join(' ') : 'Perez';
       const identificacion = passengerData.identificacion || '123456789';
       const email = passengerData.email || 'demo@example.com';
+      const telefono = passengerData.telefono || passengerData.phone || '';
+      const fechaNacimiento = passengerData.fechaNacimiento || passengerData.birthDate || '';
+      const genero = passengerData.genero || passengerData.gender || '';
 
       async function fillField(selectors, value) {
+        if (!value) return false;
         for (const selector of selectors) {
           const el = await targetPage.$(selector);
           if (el) {
@@ -288,6 +292,31 @@ async function runBot(bookingLink, passengerData, idempotencyKey, callbackUrl) {
                 await el.type(value, { delay: 50 });
                 return true;
               } catch (e2) { /* continuar */ }
+            }
+          }
+        }
+        return false;
+      }
+
+      async function selectOption(selectors, value) {
+        if (!value) return false;
+        for (const selector of selectors) {
+          const el = await targetPage.$(selector);
+          if (el) {
+            try {
+              await el.selectOption({ label: value, timeout: 3000 });
+              console.log(`[RPA] Select llenado con selector: ${selector}`);
+              return true;
+            } catch {
+              try {
+                await el.selectOption({ value: value.toLowerCase(), timeout: 3000 });
+                return true;
+              } catch {
+                try {
+                  await el.selectOption({ value: value, timeout: 3000 });
+                  return true;
+                } catch { /* continuar */ }
+              }
             }
           }
         }
@@ -326,6 +355,35 @@ async function runBot(bookingLink, passengerData, idempotencyKey, callbackUrl) {
         'input[placeholder*="email"]', 'input[placeholder*="correo"]',
         '[data-testid*="email"]'
       ], email);
+
+      await fillField([
+        'input[name*="phone"]', 'input[name*="telefono"]',
+        'input[id*="phone"]', 'input[id*="telefono"]',
+        'input[type="tel"]', 'input[placeholder*="Teléfono"]',
+        'input[placeholder*="telefono"]', 'input[placeholder*="Phone"]',
+        'input[placeholder*="phone"]', 'input[placeholder*="Celular"]',
+        '[data-testid*="phone"]', '[data-testid*="telefono"]'
+      ], telefono);
+
+      await fillField([
+        'input[name*="birth"]', 'input[name*="dob"]',
+        'input[name*="nacimiento"]', 'input[id*="birth"]',
+        'input[id*="dob"]', 'input[type="date"][name*="birth"]',
+        'input[placeholder*="Fecha"]', 'input[placeholder*="birth"]',
+        'input[placeholder*="DD/MM"]', 'input[placeholder*="MM/DD"]',
+        '[data-testid*="birth"]', '[data-testid*="dob"]'
+      ], fechaNacimiento);
+
+      await selectOption([
+        'select[name*="gender"]', 'select[name*="genero"]',
+        'select[id*="gender"]', 'select[id*="genero"]',
+        'select[name*="sex"]', 'select[id*="sex"]',
+        '[data-testid*="gender"]', '[data-testid*="genero"]'
+      ], genero) || await fillField([
+        'input[name*="gender"]', 'input[name*="genero"]',
+        'input[id*="gender"]', 'input[id*="genero"]',
+        '[data-testid*="gender-input"]'
+      ], genero);
 
       const p3Screenshot = path.join(SCREENSHOTS_DIR, `${idempotencyKey}_p3_form.png`);
       await targetPage.screenshot({ path: p3Screenshot }).catch(() => {});

@@ -51,6 +51,23 @@
                     <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Correo Aprobador</label>
                     <input v-model="form.aprobadorEmail" type="email" required class="w-full bg-white/60 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-sm" />
                   </div>
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Telefono</label>
+                    <input v-model="form.telefono" type="tel" class="w-full bg-white/60 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-sm" />
+                  </div>
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Fecha Nacimiento</label>
+                    <input v-model="form.fechaNacimiento" type="date" class="w-full bg-white/60 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-sm" />
+                  </div>
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Genero</label>
+                    <select v-model="form.genero" class="w-full bg-white/60 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-sm">
+                      <option value="">Seleccionar...</option>
+                      <option value="M">Masculino</option>
+                      <option value="F">Femenino</option>
+                      <option value="Otro">Otro</option>
+                    </select>
+                  </div>
                 </div>
               </div>
 
@@ -232,6 +249,7 @@ let pollInterval: ReturnType<typeof setInterval> | null = null;
 
 const form = ref({
   nombre: '', identificacion: '', email: '', aprobadorEmail: '',
+  telefono: '', fechaNacimiento: '', genero: '',
   origen: '', destino: '', fechaSalida: '', fechaRegreso: '',
   presupuesto: null as number | null, centroCostos: '', equipaje: false
 });
@@ -348,6 +366,7 @@ const resetFlow = () => {
   currentSolicitudId.value = '';
   form.value = {
     nombre: '', identificacion: '', email: '', aprobadorEmail: '',
+    telefono: '', fechaNacimiento: '', genero: '',
     origen: '', destino: '', fechaSalida: '', fechaRegreso: '',
     presupuesto: null, centroCostos: '', equipaje: false
   };

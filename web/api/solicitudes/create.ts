@@ -11,7 +11,8 @@ export default async function handler(req: Request, res: Response) {
     const {
       nombre, identificacion, email, aprobadorEmail,
       origen, destino, fechaSalida, fechaRegreso,
-      presupuesto, centroCostos, aerolineaPreferida, equipaje
+      presupuesto, centroCostos, aerolineaPreferida, equipaje,
+      telefono, fechaNacimiento, genero
     } = req.body;
 
     const tokenAprobacion = crypto.randomBytes(32).toString('hex');
@@ -20,8 +21,26 @@ export default async function handler(req: Request, res: Response) {
       let trabajador = await tx.trabajador.findUnique({ where: { correo: email } });
       if (!trabajador) {
         trabajador = await tx.trabajador.create({
-          data: { nombre, identificacion, correo: email }
+          data: {
+            nombre,
+            identificacion,
+            correo: email,
+            telefono: telefono || null,
+            fechaNacimiento: fechaNacimiento ? new Date(fechaNacimiento) : null,
+            genero: genero || null
+          }
         });
+      } else {
+        const updateData: any = {};
+        if (telefono) updateData.telefono = telefono;
+        if (fechaNacimiento) updateData.fechaNacimiento = new Date(fechaNacimiento);
+        if (genero) updateData.genero = genero;
+        if (Object.keys(updateData).length > 0) {
+          trabajador = await tx.trabajador.update({
+            where: { id: trabajador.id },
+            data: updateData
+          });
+        }
       }
 
       let aprobador = await tx.aprobador.findUnique({ where: { correo: aprobadorEmail } });

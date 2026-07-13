@@ -12,6 +12,9 @@ model Trabajador {
   nombre           String
   identificacion   String
   correo           String           @unique
+  telefono         String?
+  fechaNacimiento  DateTime?
+  genero           String?
   solicitudesViaje SolicitudViaje[]
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
