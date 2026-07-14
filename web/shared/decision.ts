@@ -14,7 +14,7 @@ export const rankFlights = (
 
   const scored = validFlights.map(flight => {
     let score = 100;
-    score -= flight.priceUSD;
+    score -= Math.min(flight.priceUSD / 10, 50);
     score -= flight.stops * 20;
 
     if (preferenciaAerolinea && flight.airline.toUpperCase() === preferenciaAerolinea.toUpperCase()) {
