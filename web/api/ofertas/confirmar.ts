@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../../shared/prisma.js';
 import crypto from 'crypto';
-import { getKayakBookingLink } from '../../shared/kayak.js';
+import { getBookingLink } from '../../shared/kayak.js';
 
 export default async function handler(req: Request, res: Response) {
   if (req.method !== 'POST') {
@@ -29,7 +29,7 @@ export default async function handler(req: Request, res: Response) {
 
     const idempotency_key = crypto.randomUUID();
     const dateString = flight.departureTime ? flight.departureTime.split('T')[0] : new Date().toISOString().split('T')[0];
-    const bookingLink = getKayakBookingLink(solicitud.origen, solicitud.destino, dateString);
+    const bookingLink = getBookingLink(solicitud.origen, solicitud.destino, dateString);
 
     await prisma.$transaction(async (tx) => {
       await tx.ofertaVuelo.create({

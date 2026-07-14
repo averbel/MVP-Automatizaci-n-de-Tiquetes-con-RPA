@@ -13,8 +13,6 @@ async function searchFlights(origin, destination, dateString) {
       args: [
         '--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', 
         '--disable-gpu', '--disable-blink-features=AutomationControlled',
-        '--disable-extensions', '--disable-background-networking',
-        '--disable-default-apps', '--disable-sync',
         '--window-size=1366,768'
       ] 
     });
@@ -35,81 +33,205 @@ async function searchFlights(origin, destination, dateString) {
     
     const page = await context.newPage();
 
-    const apiResponses = [];
-
-    page.on('response', async (response) => {
-      const url = response.url();
-      const contentType = response.headers()['content-type'] || '';
-
-      if (contentType.includes('json') || url.includes('flights') || url.includes('search')) {
-        if (url.includes('kayak.com') && (
-          url.includes('/s/') ||
-          url.includes('search') ||
-          url.includes('itinerary') ||
-          url.includes('flight') ||
-          url.includes('graphql') ||
-          url.includes('api')
-        )) {
-          try {
-            const body = await response.json();
-            apiResponses.push({ url, body });
-            console.log(`[RPA Search] Captured API: ${url.substring(0, 120)}`);
-          } catch {}
-        }
-      }
-    });
-
     await page.route('**/*', route => {
-      const url = route.request().url();
       const type = route.request().resourceType();
-      if (type === 'image' || type === 'media' || type === 'font') {
-        return route.abort();
-      }
-      if (url.includes('doubleclick') || url.includes('googlesyndication') ||
-          url.includes('google-analytics') || url.includes('facebook.net') ||
-          url.includes('hotjar') || url.includes('sentry') ||
-          url.includes('criteo') || url.includes('prebid')) {
+      const url = route.request().url();
+      if (type === 'image' || type === 'media' || type === 'font') return route.abort();
+      if (url.includes('google-analytics') || url.includes('googletagmanager') ||
+          url.includes('doubleclick') || url.includes('facebook') ||
+          url.includes('sentry') || url.includes('hotjar')) {
         return route.abort();
       }
       return route.continue();
     });
-    
-    const searchUrl = `https://www.kayak.com/flights/${origin}-${destination}/${dateString}?sort=bestflight_a`;
+
+    const formattedDate = formatDateForGoogle(dateString);
+    const searchUrl = `https://www.google.com/travel/flights?q=Flights+from+${origin}+to+${destination}+on+${formattedDate}&curr=USD&hl=en`;
     console.log(`[RPA Search] Navegando a: ${searchUrl}`);
     
-    await page.goto(searchUrl, { waitUntil: 'load', timeout: 60000 });
+    await page.goto(searchUrl, { waitUntil: 'load', timeout: 45000 });
 
     try {
-      const consentBtn = page.locator('button:has-text("Accept"), button:has-text("Got it"), button:has-text("Acepto"), [id*="consent"] button');
-      await consentBtn.first().click({ timeout: 4000 });
-      console.log('[RPA Search] Cookie consent dismissed');
+      const consentBtn = page.locator('button:has-text("Accept all"), button:has-text("Aceptar todo"), button:has-text("I agree"), form[action*="consent"] button');
+      await consentBtn.first().click({ timeout: 5000 });
+      console.log('[RPA Search] Consent dismissed');
+      await page.waitForTimeout(2000);
     } catch {
-      console.log('[RPA Search] No cookie banner found');
+      console.log('[RPA Search] No consent banner');
     }
 
-    try {
-      await page.waitForLoadState('networkidle', { timeout: 30000 });
-    } catch {
-      console.log('[RPA Search] networkidle timeout, continuing with captured data');
-    }
+    console.log('[RPA Search] Waiting for flight results to load...');
+    
+    let foundResults = false;
+    
+    const selectors = [
+      'li[class*="pIav2d"]',
+      'li[data-ved]',
+      '[class*="Rk10dc"]',
+      '[class*="yR1bYc"]',
+      'ul[class*="Rk10dc"] > li',
+      '[role="list"] > [role="listitem"]',
+      'div[class*="结果"] li',
+      'c-wiz[data-hveid] li',
+      '.shsNrd',
+      '[data-hveid] li[class]'
+    ];
 
-    await page.waitForTimeout(10000);
-
-    console.log(`[RPA Search] Captured ${apiResponses.length} API responses`);
-
-    for (const resp of apiResponses) {
-      const parsed = extractFromApiResponse(resp.body, dateString);
-      if (parsed.length > 0) {
-        flights.push(...parsed);
-        console.log(`[RPA Search] Extracted ${parsed.length} flights from API response`);
-        break;
+    for (const sel of selectors) {
+      try {
+        await page.waitForSelector(sel, { timeout: 8000 });
+        const count = await page.locator(sel).count();
+        if (count > 0) {
+          console.log(`[RPA Search] Found ${count} elements with: ${sel}`);
+          foundResults = true;
+          break;
+        }
+      } catch {
+        continue;
       }
     }
 
-    if (flights.length === 0) {
-      console.log('[RPA Search] API interception failed, falling back to DOM extraction...');
-      const domFlights = await extractFromDOM(page, dateString);
-      flights.push(...domFlights);
+    if (!foundResults) {
+      console.log('[RPA Search] Selectors not found, waiting for content...');
+      try {
+        await page.waitForLoadState('networkidle', { timeout: 15000 });
+      } catch {}
+      await page.waitForTimeout(10000);
+    }
+
+    const pageText = await page.evaluate(() => document.body?.innerText?.substring(0, 2000) || '');
+    console.log(`[RPA Search] Page text: ${pageText.substring(0, 500)}`);
+
+    const extracted = await page.evaluate((date) => {
+      const results = [];
+      
+      const body = document.body?.innerText || '';
+      
+      const flightBlocks = body.split(/\n/);
+      
+      const timeRegex = /\b(\d{1,2}:\d{2})\s*(AM|PM)?\b/gi;
+      const priceRegex = /\$(\d{1,3}(?:,\d{3})*)/;
+      const durationRegex = /(\d+)\s*h(?:r|\s*(?:\d+\s*m|min))?/i;
+      const stopsRegex = /(\d+)\s*stop/i;
+      const nonstopRegex = /nonstop|direct|sin escala/i;
+
+      let currentBlock = [];
+      const blocks = [];
+      
+      for (const line of flightBlocks) {
+        const trimmed = line.trim();
+        if (priceRegex.test(trimmed) && currentBlock.length > 0) {
+          blocks.push([...currentBlock, trimmed]);
+          currentBlock = [];
+        }
+        if (trimmed.length > 0) currentBlock.push(trimmed);
+      }
+      
+      if (currentBlock.length > 0) blocks.push(currentBlock);
+
+      console.log(`Found ${blocks.length} potential flight blocks`);
+
+      for (const block of blocks.slice(0, 10)) {
+        const blockText = block.join(' ');
+        
+        const priceMatch = blockText.match(priceRegex);
+        if (!priceMatch) continue;
+        const price = parseInt(priceMatch[1].replace(/,/g, ''));
+        if (price < 20 || price > 10000) continue;
+
+        const times = [];
+        let m;
+        while ((m = timeRegex.exec(blockText)) !== null) {
+          times.push(m[0].trim());
+        }
+        timeRegex.lastIndex = 0;
+
+        let airline = '';
+        for (const line of block) {
+          const t = line.trim();
+          if (t.length >= 3 && t.length <= 30 && /^[A-Z]/.test(t) && 
+              !t.match(/^\$/) && !t.match(/^\d/) && !t.match(/stop/i) &&
+              !t.match(/hour|min|h\b/i) && !t.match(/^(Nonstop|Direct)$/i) &&
+              !t.match(/^From$/i) && !t.match(/^Best/i) && !t.match(/^Cheapest/i) &&
+              !t.match(/^Fastest/i) && !t.match(/departure/i) && !t.match(/arrival/i) &&
+              t !== 'Economy' && t !== 'Business' && t !== 'First') {
+            airline = t;
+            break;
+          }
+        }
+
+        const stops = nonstopRegex.test(blockText) ? 0 :
+                      (stopsRegex.exec(blockText) || [, '1'])[1];
+
+        const durationMatch = durationRegex.exec(blockText);
+        let durationMin = 180;
+        if (durationMatch) {
+          durationMin = parseInt(durationMatch[1]) * 60;
+          const minMatch = blockText.match(/(\d+)\s*m(?:in)?/i);
+          if (minMatch) durationMin += parseInt(minMatch[1]);
+        }
+
+        if (airline && times.length >= 1) {
+          results.push({
+            airline,
+            price,
+            departureTime: times[0] || '08:00 AM',
+            arrivalTime: times[1] || (times.length > 1 ? times[times.length - 1] : '11:00 AM'),
+            stops: typeof stops === 'string' ? parseInt(stops) || 0 : stops,
+            durationMinutes: durationMin
+          });
+        }
+
+        if (results.length >= 5) break;
+      }
+
+      if (results.length === 0) {
+        const allText = body;
+        const priceMatches = [...allText.matchAll(/\$(\d{1,3}(?:,\d{3})*)/g)];
+        console.log(`Price matches found: ${priceMatches.length}`);
+        
+        for (const pm of priceMatches.slice(0, 5)) {
+          const price = parseInt(pm[1].replace(/,/g, ''));
+          if (price < 50 || price > 5000) continue;
+          
+          const startIdx = Math.max(0, pm.index - 200);
+          const endIdx = Math.min(allText.length, pm.index + 200);
+          const context = allText.substring(startIdx, endIdx);
+          
+          const ctxTimes = [...context.matchAll(timeRegex)];
+          const airlineMatch = context.match(/\n([A-Z][A-Za-z\s]+(?:Airlines?|Airways?|Air|航空))\n/);
+          
+          if (airlineMatch && ctxTimes.length > 0) {
+            results.push({
+              airline: airlineMatch[1].trim(),
+              price,
+              departureTime: ctxTimes[0]?.[0] || '08:00 AM',
+              arrivalTime: ctxTimes[1]?.[0] || ctxTimes[0]?.[0] || '11:00 AM',
+              stops: nonstopRegex.test(context) ? 0 : 1,
+              durationMinutes: 180
+            });
+          }
+          
+          if (results.length >= 5) break;
+        }
+      }
+
+      return { count: results.length, results, bodyPreview: body.substring(0, 1000) };
+    }, dateString);
+
+    console.log(`[RPA Search] Extracted ${extracted.count} flights`);
+    console.log(`[RPA Search] Body preview: ${extracted.bodyPreview?.substring(0, 300)}`);
+
+    for (const f of extracted.results) {
+      flights.push({
+        id: `rpa-gf-${flights.length}`,
+        airline: f.airline.trim(),
+        priceUSD: f.price,
+        departureTime: `${dateString}T${convertTo24h(f.departureTime)}`,
+        arrivalTime: `${dateString}T${convertTo24h(f.arrivalTime)}`,
+        stops: f.stops,
+        durationMinutes: f.durationMinutes || 180
+      });
     }
 
   } catch (error) {
@@ -123,239 +245,15 @@ async function searchFlights(origin, destination, dateString) {
   return flights;
 }
 
-function extractFromApiResponse(body, dateString) {
-  const results = [];
-
+function formatDateForGoogle(dateString) {
   try {
-    if (body && typeof body === 'object') {
-      const searchResult = body.searchResults || body.results || body.itineraries;
-      if (Array.isArray(searchResult)) {
-        for (const item of searchResult.slice(0, 5)) {
-          const flight = parseItinerary(item, dateString);
-          if (flight) results.push(flight);
-        }
-        if (results.length > 0) return results;
-      }
-
-      if (body.data) {
-        const data = body.data;
-        const itineraries = data.searchResults || data.itineraries || data.flights;
-        if (Array.isArray(itineraries)) {
-          for (const item of itineraries.slice(0, 5)) {
-            const flight = parseItinerary(item, dateString);
-            if (flight) results.push(flight);
-          }
-          if (results.length > 0) return results;
-        }
-      }
-
-      if (body.flights && Array.isArray(body.flights)) {
-        for (const item of body.flights.slice(0, 5)) {
-          const flight = parseItinerary(item, dateString);
-          if (flight) results.push(flight);
-        }
-        if (results.length > 0) return results;
-      }
-
-      const flatResults = findItinerariesInObject(body);
-      for (const item of flatResults.slice(0, 5)) {
-        const flight = parseItinerary(item, dateString);
-        if (flight) results.push(flight);
-      }
-    }
-  } catch (e) {
-    console.error('[RPA Search] API parse error:', e.message);
+    const d = new Date(dateString + 'T00:00:00');
+    const months = ['January', 'February', 'March', 'April', 'May', 'June',
+                    'July', 'August', 'September', 'October', 'November', 'December'];
+    return `${months[d.getMonth()]}+${d.getDate()},+${d.getFullYear()}`;
+  } catch {
+    return dateString;
   }
-
-  return results;
-}
-
-function findItinerariesInObject(obj, depth = 0) {
-  if (depth > 6 || !obj || typeof obj !== 'object') return [];
-  
-  const results = [];
-
-  if (Array.isArray(obj)) {
-    if (obj.length > 0 && obj[0] && (obj[0].legs || obj[0].price || obj[0].airline || obj[0].carrier)) {
-      return obj;
-    }
-    for (const item of obj) {
-      results.push(...findItinerariesInObject(item, depth + 1));
-      if (results.length > 0) return results;
-    }
-  } else {
-    for (const key of Object.keys(obj)) {
-      results.push(...findItinerariesInObject(obj[key], depth + 1));
-      if (results.length > 0) return results;
-    }
-  }
-
-  return results;
-}
-
-function parseItinerary(item, dateString) {
-  try {
-    if (!item) return null;
-
-    let airline = '';
-    let price = 0;
-    let depTime = '';
-    let arrTime = '';
-    let stops = 0;
-    let duration = 180;
-
-    if (item.legs && Array.isArray(item.legs) && item.legs.length > 0) {
-      const leg = item.legs[0];
-      airline = leg.carrier || leg.airline || leg.operatingCarrier || '';
-      depTime = leg.departureTime || leg.departure || '';
-      arrTime = leg.arrivalTime || leg.arrival || '';
-      stops = leg.stops != null ? leg.stops : (leg.legStops ? leg.legStops.length : 0);
-      duration = leg.duration || leg.durationMinutes || 180;
-    }
-
-    if (!airline) airline = item.airline || item.carrier || item.operatingCarrier || '';
-    
-    if (item.price) {
-      if (typeof item.price === 'object') {
-        price = item.price.amount || item.price.value || item.price.raw || 0;
-      } else {
-        price = typeof item.price === 'number' ? item.price : parseInt(String(item.price).replace(/[^0-9]/g, ''));
-      }
-    }
-
-    if (!depTime) depTime = item.departureTime || item.departure || item.leaveTime || '';
-    if (!arrTime) arrTime = item.arrivalTime || item.arrival || item.arriveTime || '';
-    if (!stops && stops !== 0) stops = item.stops || item.numberOfStops || 0;
-    if (duration === 180) duration = item.duration || item.durationMinutes || 180;
-
-    if (!airline || price === 0) return null;
-
-    const depStr = formatTime(depTime, dateString);
-    const arrStr = formatTime(arrTime, dateString);
-
-    return {
-      id: `rpa-api-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
-      airline: String(airline).trim(),
-      priceUSD: Number(price),
-      departureTime: depStr,
-      arrivalTime: arrStr,
-      stops: typeof stops === 'number' ? stops : parseInt(String(stops)) || 0,
-      durationMinutes: typeof duration === 'number' ? duration : parseInt(String(duration)) || 180
-    };
-  } catch (e) {
-    return null;
-  }
-}
-
-function formatTime(timeValue, dateString) {
-  if (!timeValue) return `${dateString}T08:00:00`;
-  
-  const str = String(timeValue);
-  
-  if (str.includes('T') || str.includes('-')) {
-    return str.length > 16 ? str.substring(0, 16) : str;
-  }
-  
-  const timeMatch = str.match(/(\d{1,2}):(\d{2})/);
-  if (timeMatch) {
-    return `${dateString}T${timeMatch[1].padStart(2, '0')}:${timeMatch[2]}:00`;
-  }
-  
-  return `${dateString}T08:00:00`;
-}
-
-async function extractFromDOM(page, dateString) {
-  const flights = [];
-
-  try {
-    const extractedFlights = await page.evaluate((date) => {
-      const results = [];
-      const bodyText = document.body?.innerText || '';
-      
-      const priceRegex = /\$(\d{1,3}(?:,\d{3})*)/g;
-      const timeRegex = /\b(\d{1,2}:\d{2})\s*(AM|PM)?\b/gi;
-      
-      const allElements = document.querySelectorAll('div, li, article, section');
-      
-      for (const el of allElements) {
-        const text = el.textContent || '';
-        if (text.length < 20 || text.length > 2000) continue;
-        
-        const priceMatch = text.match(/\$(\d{1,3}(?:,\d{3})*)/);
-        if (!priceMatch) continue;
-        
-        const rect = el.getBoundingClientRect();
-        if (rect.height < 40 || rect.height > 500 || rect.width < 150) continue;
-        
-        const price = parseInt(priceMatch[1].replace(/,/g, ''));
-        if (price < 20 || price > 10000) continue;
-        
-        const times = [];
-        let m;
-        const timeRe = /\b(\d{1,2}:\d{2})\s*(AM|PM)?\b/gi;
-        while ((m = timeRe.exec(text)) !== null) {
-          times.push(m[0].trim());
-        }
-        
-        const isNonstop = /nonstop|direct|sin escala/i.test(text);
-        const stopMatch = text.match(/(\d+)\s*stop/i);
-        const stops = isNonstop ? 0 : (stopMatch ? parseInt(stopMatch[1]) : 1);
-        
-        const durationMatch = text.match(/(\d+)\s*h(?:r|\s*min|\s*m)/i);
-        const durationMin = durationMatch ? parseInt(durationMatch[1]) * 60 : 180;
-        
-        const imgEl = el.querySelector('img[alt]');
-        let airline = imgEl?.getAttribute('alt')?.trim() || '';
-        
-        if (!airline || airline.length < 2 || airline.length > 40) {
-          const spans = el.querySelectorAll('span, div, strong, b');
-          for (const span of spans) {
-            const t = span.textContent?.trim() || '';
-            if (t.length >= 3 && t.length <= 25 && /^[A-Z\s]+$/.test(t) && 
-                !t.match(/\d/) && !t.includes('stop') && !t.includes('hour') && 
-                !t.includes('min') && !t.includes('$')) {
-              airline = t;
-              break;
-            }
-          }
-        }
-        
-        if (!airline || airline.length < 3) continue;
-        
-        results.push({
-          airline,
-          price,
-          departureTime: times[0] || '08:00',
-          arrivalTime: times[1] || '11:00',
-          stops,
-          durationMinutes: durationMin
-        });
-        
-        if (results.length >= 5) break;
-      }
-      
-      return { count: results.length, textPreview: bodyText.substring(0, 800), results };
-    }, dateString);
-
-    console.log(`[RPA Search] DOM extraction: ${extractedFlights.count} candidates`);
-    console.log(`[RPA Search] Page text preview: ${extractedFlights.textPreview.substring(0, 200)}`);
-
-    for (const f of extractedFlights.results) {
-      flights.push({
-        id: `rpa-dom-${flights.length}`,
-        airline: f.airline.trim(),
-        priceUSD: f.price,
-        departureTime: `${dateString}T${convertTo24h(f.departureTime)}`,
-        arrivalTime: `${dateString}T${convertTo24h(f.arrivalTime)}`,
-        stops: f.stops,
-        durationMinutes: f.durationMinutes
-      });
-    }
-  } catch (e) {
-    console.error('[RPA Search] DOM extraction error:', e.message);
-  }
-
-  return flights;
 }
 
 function convertTo24h(timeStr) {
