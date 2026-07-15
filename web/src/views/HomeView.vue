@@ -57,7 +57,7 @@
                   </div>
                   <div>
                     <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Fecha Nacimiento</label>
-                    <input v-model="form.fechaNacimiento" type="date" class="w-full bg-slate-900/50 border border-cyan-500/20 text-white placeholder-slate-500 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:bg-slate-900 transition-all shadow-inner focus:border-cyan-400" />
+                    <input :value="form.fechaNacimiento" @input="e => formatDateInput(e, 'fechaNacimiento')" type="tel" placeholder="DD/MM/YYYY" maxlength="10" pattern="\d{2}/\d{2}/\d{4}" class="w-full bg-slate-900/50 border border-cyan-500/20 text-white placeholder-slate-500 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:bg-slate-900 transition-all shadow-inner focus:border-cyan-400 tracking-wider" />
                   </div>
                   <div>
                     <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Genero</label>
@@ -87,11 +87,11 @@
                   </div>
                   <div>
                     <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Salida</label>
-                    <input v-model="form.fechaSalida" type="date" required class="w-full bg-slate-900/50 border border-cyan-500/20 text-white placeholder-slate-500 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:bg-slate-900 transition-all shadow-inner focus:border-cyan-400" />
+                    <input :value="form.fechaSalida" @input="e => formatDateInput(e, 'fechaSalida')" type="tel" required placeholder="DD/MM/YYYY" maxlength="10" pattern="\d{2}/\d{2}/\d{4}" class="w-full bg-slate-900/50 border border-cyan-500/20 text-white placeholder-slate-500 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:bg-slate-900 transition-all shadow-inner focus:border-cyan-400 tracking-wider" />
                   </div>
                   <div>
                     <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Regreso (Opc)</label>
-                    <input v-model="form.fechaRegreso" type="date" class="w-full bg-slate-900/50 border border-cyan-500/20 text-white placeholder-slate-500 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:bg-slate-900 transition-all shadow-inner focus:border-cyan-400" />
+                    <input :value="form.fechaRegreso" @input="e => formatDateInput(e, 'fechaRegreso')" type="tel" placeholder="DD/MM/YYYY" maxlength="10" pattern="\d{2}/\d{2}/\d{4}" class="w-full bg-slate-900/50 border border-cyan-500/20 text-white placeholder-slate-500 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:bg-slate-900 transition-all shadow-inner focus:border-cyan-400 tracking-wider" />
                   </div>
                   <div>
                     <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Presupuesto USD</label>
@@ -259,13 +259,45 @@ const formatTime = (iso: string) => {
   catch { return iso; }
 };
 
+const formatDateInput = (event: Event, field: keyof typeof form.value) => {
+  const target = event.target as HTMLInputElement;
+  let value = target.value.replace(/\D/g, '');
+  if (value.length > 8) value = value.substring(0, 8);
+
+  let formattedValue = value;
+  if (value.length > 4) {
+    formattedValue = `${value.substring(0, 2)}/${value.substring(2, 4)}/${value.substring(4)}`;
+  } else if (value.length > 2) {
+    formattedValue = `${value.substring(0, 2)}/${value.substring(2)}`;
+  }
+
+  target.value = formattedValue;
+  // @ts-ignore
+  form.value[field] = formattedValue;
+};
+
+const parseDisplayDate = (display: string) => {
+  if (!display || display.length !== 10) return '';
+  const parts = display.split('/');
+  if (parts.length === 3) {
+    const [d, m, y] = parts;
+    return `${y}-${m}-${d}`;
+  }
+  return '';
+};
+
 const handleSubmit = async () => {
   loading.value = true;
   try {
+    const payload = { ...form.value };
+    if (payload.fechaNacimiento) payload.fechaNacimiento = parseDisplayDate(payload.fechaNacimiento);
+    if (payload.fechaSalida) payload.fechaSalida = parseDisplayDate(payload.fechaSalida);
+    if (payload.fechaRegreso) payload.fechaRegreso = parseDisplayDate(payload.fechaRegreso);
+
     const res = await fetch((import.meta.env.VITE_API_URL || '') + '/api/solicitudes/create', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form.value),
+      body: JSON.stringify(payload),
     });
 
     if (!res.ok) throw new Error('Error al enviar la solicitud');
