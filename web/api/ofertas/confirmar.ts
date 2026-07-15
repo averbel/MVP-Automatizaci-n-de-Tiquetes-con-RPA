@@ -67,9 +67,16 @@ export default async function handler(req: Request, res: Response) {
       RPA_URL = 'http://' + RPA_URL;
     }
     const RPA_WEBHOOK_SECRET = process.env.RPA_WEBHOOK_SECRET || 'secret-rpa-key';
-    const PUBLIC_URL = process.env.PUBLIC_URL || `http://localhost:${process.env.PORT || 3000}`;
+    let PUBLIC_URL = process.env.PUBLIC_URL;
+    if (!PUBLIC_URL && process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+      PUBLIC_URL = `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
+    } else if (!PUBLIC_URL && process.env.VERCEL_URL) {
+      PUBLIC_URL = `https://${process.env.VERCEL_URL}`;
+    } else if (!PUBLIC_URL) {
+      PUBLIC_URL = `http://localhost:${process.env.PORT || 3000}`;
+    }
 
-    console.log(`[Webhook -> RPA] Disparando RPA para solicitud ${solicitudId}`);
+    console.log(`[Webhook -> RPA] Disparando RPA para solicitud ${solicitudId}. Callback: ${PUBLIC_URL}/api/webhooks/rpa-result`);
 
     fetch(`${RPA_URL}/api/rpa/comprar`, {
       method: 'POST',
