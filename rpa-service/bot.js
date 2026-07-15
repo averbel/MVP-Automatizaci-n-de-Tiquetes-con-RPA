@@ -486,7 +486,24 @@ async function runBot(bookingLink, passengerData, idempotencyKey, callbackUrl) {
       await targetPage.waitForTimeout(3000);
 
       screenshotPath = path.join(SCREENSHOTS_DIR, `${idempotencyKey}_final_success.png`);
-      await targetPage.screenshot({ path: screenshotPath });
+      
+      // Tomar la captura final de la pagina principal (Kayak) en lugar de la aerolínea.
+      // Las aerolíneas bloquean bots y devuelven pantallas blancas. Kayak es mas permisivo.
+      if (!targetPage.isClosed() && targetPage !== page) {
+        await targetPage.screenshot({ path: screenshotPath }).catch(() => {});
+      } else {
+        await page.screenshot({ path: screenshotPath, fullPage: true }).catch(() => {});
+      }
+      
+      // Si la captura de la aerolinea falló o quedó vacía, asegurar una captura de Kayak
+      try {
+        const stats = fs.statSync(screenshotPath);
+        if (stats.size < 50000) { // Si la imagen es sospechosamente pequeña (pantalla blanca)
+          await page.screenshot({ path: screenshotPath, fullPage: false });
+        }
+      } catch (e) {
+        await page.screenshot({ path: screenshotPath, fullPage: false });
+      }
 
       success = true;
       console.log(`[RPA] Éxito en el intento ${attempts}!`);
