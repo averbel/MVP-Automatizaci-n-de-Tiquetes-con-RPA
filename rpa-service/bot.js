@@ -157,8 +157,7 @@ async function runBot(bookingLink, passengerData, idempotencyKey, callbackUrl) {
 
       const context = await browser.newContext({
         viewport: { width: 1280, height: 800 },
-        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        locale: 'es-CO',
+        userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',        locale: 'es-CO',
         timezoneId: 'America/Bogota'
       });
 
@@ -268,6 +267,8 @@ async function runBot(bookingLink, passengerData, idempotencyKey, callbackUrl) {
       console.log('[RPA] Llenando datos del pasajero...');
 
       const nombre = passengerData.nombre || 'Juan Perez';
+
+      
       const parts = nombre.trim().split(' ');
       const primerNombre = parts[0] || 'Juan';
       const apellido = parts.length > 1 ? parts.slice(1).join(' ') : 'Perez';
@@ -303,20 +304,38 @@ async function runBot(bookingLink, passengerData, idempotencyKey, callbackUrl) {
         for (const selector of selectors) {
           const el = await targetPage.$(selector);
           if (el) {
-            try {
-              await el.selectOption({ label: value, timeout: 3000 });
-              console.log(`[RPA] Select llenado con selector: ${selector}`);
-              return true;
-            } catch {
+            const tagName = await el.evaluate(e => e.tagName.toLowerCase());
+            if (tagName === 'select') {
               try {
-                await el.selectOption({ value: value.toLowerCase(), timeout: 3000 });
+                await el.selectOption({ label: value, timeout: 3000 });
+                console.log(`[RPA] Select llenado con selector: ${selector}`);
                 return true;
               } catch {
                 try {
-                  await el.selectOption({ value: value, timeout: 3000 });
+                  await el.selectOption({ value: value.toLowerCase(), timeout: 3000 });
                   return true;
-                } catch { /* continuar */ }
+                } catch {
+                  try {
+                    await el.selectOption({ value: value, timeout: 3000 });
+                    return true;
+                  } catch { /* continuar */ }
+                }
               }
+            } else {
+              // Custom dropdown (div/ul)
+              try {
+                await el.click({ timeout: 3000 });
+                await targetPage.waitForTimeout(500);
+                const option = await targetPage.$(`[role="option"]:has-text("${value}"), li:has-text("${value}")`);
+                if (option) {
+                  await option.click({ timeout: 3000 });
+                  console.log(`[RPA] Custom select llenado: ${selector}`);
+                  return true;
+                }
+                await el.type(value, { delay: 50 });
+                await targetPage.keyboard.press('Enter');
+                return true;
+              } catch { /* continuar */ }
             }
           }
         }
@@ -365,14 +384,35 @@ async function runBot(bookingLink, passengerData, idempotencyKey, callbackUrl) {
         '[data-testid*="phone"]', '[data-testid*="telefono"]'
       ], telefono);
 
-      await fillField([
-        'input[name*="birth"]', 'input[name*="dob"]',
-        'input[name*="nacimiento"]', 'input[id*="birth"]',
-        'input[id*="dob"]', 'input[type="date"][name*="birth"]',
-        'input[placeholder*="Fecha"]', 'input[placeholder*="birth"]',
-        'input[placeholder*="DD/MM"]', 'input[placeholder*="MM/DD"]',
-        '[data-testid*="birth"]', '[data-testid*="dob"]'
-      ], fechaNacimiento);
+      async function fillSplitDate(dateStr) {
+        if (!dateStr || dateStr.length < 10) return false;
+        const [year, month, day] = dateStr.split('-');
+        try {
+           const dayEl = await targetPage.$('input[placeholder*="DD"], input[name*="day"]');
+           const monthEl = await targetPage.$('input[placeholder*="MM"], input[name*="month"]');
+           const yearEl = await targetPage.$('input[placeholder*="YY"], input[name*="year"]');
+           if (dayEl && monthEl && yearEl) {
+              await dayEl.fill(day);
+              await monthEl.fill(month);
+              await yearEl.fill(year);
+              console.log(`[RPA] Fecha separada llenada`);
+              return true;
+           }
+        } catch {}
+        return false;
+      }
+
+      const dateFilled = await fillSplitDate(fechaNacimiento);
+      if (!dateFilled) {
+        await fillField([
+          'input[name*="birth"]', 'input[name*="dob"]',
+          'input[name*="nacimiento"]', 'input[id*="birth"]',
+          'input[id*="dob"]', 'input[type="date"][name*="birth"]',
+          'input[placeholder*="Fecha"]', 'input[placeholder*="birth"]',
+          'input[placeholder*="DD/MM"]', 'input[placeholder*="MM/DD"]',
+          '[data-testid*="birth"]', '[data-testid*="dob"]'
+        ], fechaNacimiento);
+      }
 
       await selectOption([
         'select[name*="gender"]', 'select[name*="genero"]',

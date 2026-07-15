@@ -1,5 +1,6 @@
 const { chromium } = require('playwright');
-
+const fs = require('fs');
+const path = require('path');
 async function searchFlights(origin, destination, dateString) {
   console.log(`[RPA Search] ${origin} -> ${destination} para ${dateString}`);
   
@@ -97,6 +98,13 @@ async function searchFlights(origin, destination, dateString) {
         await page.waitForLoadState('networkidle', { timeout: 15000 });
       } catch {}
       await page.waitForTimeout(10000);
+      
+      const debugPath = path.join(__dirname, `screenshots/search_debug_${Date.now()}.png`);
+      try {
+        if (!fs.existsSync(path.join(__dirname, 'screenshots'))) fs.mkdirSync(path.join(__dirname, 'screenshots'), {recursive: true});
+        await page.screenshot({ path: debugPath });
+        console.log(`[RPA Search] Debug screenshot saved to ${debugPath}`);
+      } catch(e) { console.error('Screenshot error:', e.message); }
     }
 
     const pageText = await page.evaluate(() => document.body?.innerText?.substring(0, 2000) || '');
