@@ -296,7 +296,7 @@ function convertTo24h(timeStr) {
 }
 
 function getMockFlights(origin, destination, dateString) {
-  const airlines = ['AVIANCA', 'LATAM', 'Copa Airlines', 'Viva Air', 'Wingo'];
+  const airlines = ['AVIANCA', 'LATAM', 'Copa Airlines', 'American Airlines', 'Delta', 'Iberia', 'Wingo'];
   const mockFlights = [];
   
   for (let i = 0; i < 3; i++) {
