@@ -262,7 +262,7 @@ const formatTime = (iso: string) => {
 const handleSubmit = async () => {
   loading.value = true;
   try {
-    const res = await fetch('/api/solicitudes/create', {
+    const res = await fetch((import.meta.env.VITE_API_URL || '') + '/api/solicitudes/create', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(form.value),
@@ -283,7 +283,7 @@ const handleSubmit = async () => {
 
 const fetchVuelos = async () => {
   try {
-    const res = await fetch('/api/vuelos/buscar', {
+    const res = await fetch((import.meta.env.VITE_API_URL || '') + '/api/vuelos/buscar', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ solicitudId: currentSolicitudId.value })
@@ -305,7 +305,7 @@ const fetchVuelos = async () => {
 const startPolling = () => {
   pollInterval = setInterval(async () => {
     try {
-      const res = await fetch(`/api/solicitudes/estado?id=${currentSolicitudId.value}`);
+      const res = await fetch((import.meta.env.VITE_API_URL || '') + `/api/solicitudes/estado?id=${currentSolicitudId.value}`);
       if (!res.ok) return;
       const data = await res.json();
 
@@ -328,7 +328,7 @@ const stopPolling = () => {
 const comprarVuelo = async (vuelo: any) => {
   estado.value = 'RPA_EJECUTANDO';
   try {
-    const res = await fetch('/api/ofertas/confirmar', {
+    const res = await fetch((import.meta.env.VITE_API_URL || '') + '/api/ofertas/confirmar', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ solicitudId: currentSolicitudId.value, flight: vuelo })
@@ -338,7 +338,7 @@ const comprarVuelo = async (vuelo: any) => {
 
     pollInterval = setInterval(async () => {
       try {
-        const r = await fetch(`/api/solicitudes/estado?id=${currentSolicitudId.value}`);
+        const r = await fetch((import.meta.env.VITE_API_URL || '') + `/api/solicitudes/estado?id=${currentSolicitudId.value}`);
         if (!r.ok) return;
         const d = await r.json();
         if (d.estado_rpa === 'EXITO') {

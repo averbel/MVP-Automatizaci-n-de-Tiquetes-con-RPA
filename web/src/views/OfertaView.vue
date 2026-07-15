@@ -126,7 +126,7 @@ const oferta = ref<any>(null);
 
 const fetchOferta = async () => {
   try {
-    const res = await fetch(`/api/ofertas/obtener?solicitudId=${id}`);
+    const res = await fetch((import.meta.env.VITE_API_URL || '') + `/api/ofertas/obtener?solicitudId=${id}`);
     if (!res.ok) throw new Error('No se pudo cargar la oferta. Es posible que el enlace haya expirado o ya se haya procesado.');
     const data = await res.json();
     oferta.value = data.oferta;
@@ -140,7 +140,7 @@ const fetchOferta = async () => {
 const confirmar = async (decision: boolean) => {
   procesando.value = true;
   try {
-    const res = await fetch(`/api/ofertas/confirmar`, {
+    const res = await fetch((import.meta.env.VITE_API_URL || '') + `/api/ofertas/confirmar`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ solicitudId: id, aceptar: decision })
