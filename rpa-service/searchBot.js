@@ -118,7 +118,7 @@ async function searchFlights(origin, destination, dateString) {
       const flightBlocks = body.split(/\n/);
       
       const timeRegex = /\b(\d{1,2}:\d{2})\s*(AM|PM)?\b/gi;
-      const priceRegex = /\$(\d{1,3}(?:,\d{3})*)/;
+      const priceRegex = /(?:COP|\$)\s*(\d{1,3}(?:[.,]\d{3})*)/i;
       const durationRegex = /(\d+)\s*h(?:r|\s*(?:\d+\s*m|min))?/i;
       const stopsRegex = /(\d+)\s*stop/i;
       const nonstopRegex = /nonstop|direct|sin escala/i;
@@ -144,8 +144,14 @@ async function searchFlights(origin, destination, dateString) {
         
         const priceMatch = blockText.match(priceRegex);
         if (!priceMatch) continue;
-        const price = parseInt(priceMatch[1].replace(/,/g, ''));
-        if (price < 20 || price > 10000) continue;
+        let price = parseInt(priceMatch[1].replace(/[.,]/g, ''), 10);
+        
+        if (price > 20000) {
+          // Asumimos que esta en COP (pesos colombianos)
+          price = Math.round(price / 4000);
+        }
+        
+        if (price < 10 || price > 10000) continue;
 
         const times = [];
         let m;
@@ -195,7 +201,7 @@ async function searchFlights(origin, destination, dateString) {
 
       if (results.length === 0) {
         const allText = body;
-        const priceMatches = [...allText.matchAll(/\$(\d{1,3}(?:,\d{3})*)/g)];
+        const priceMatches = [...allText.matchAll(/(?:COP|\$)\s*(\d{1,3}(?:[.,]\d{3})*)/gi)];
         console.log(`Price matches found: ${priceMatches.length}`);
         
         for (const pm of priceMatches.slice(0, 5)) {
