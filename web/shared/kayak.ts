@@ -50,10 +50,6 @@ export const kayakSearch = async (
   }
 };
 
-export const getBookingLink = (
-  origin: string,
-  destination: string,
-  dateString: string
-): string => {
-  return `https://www.google.com/travel/flights?q=Flights+from+${origin}+to+${destination}+on+${dateString}&curr=USD`;
+export const getBookingLink = (origin: string, destination: string, dateString: string) => {
+  return `https://www.kayak.com/flights/${origin}-${destination}/${dateString}?sort=bestflight_a`;
 };
