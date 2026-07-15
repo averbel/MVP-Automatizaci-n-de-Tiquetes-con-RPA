@@ -62,7 +62,10 @@ export default async function handler(req: Request, res: Response) {
       });
     });
 
-    const RPA_URL = process.env.RPA_API_URL || process.env.RPA_URL || 'http://localhost:4000';
+    let RPA_URL = process.env.RPA_API_URL || process.env.RPA_URL || 'http://localhost:4000';
+    if (!RPA_URL.startsWith('http://') && !RPA_URL.startsWith('https://')) {
+      RPA_URL = 'http://' + RPA_URL;
+    }
     const RPA_WEBHOOK_SECRET = process.env.RPA_WEBHOOK_SECRET || 'secret-rpa-key';
     const PUBLIC_URL = process.env.PUBLIC_URL || `http://localhost:${process.env.PORT || 3000}`;
 

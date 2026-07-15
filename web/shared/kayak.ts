@@ -7,7 +7,10 @@ export const kayakSearch = async (
 ): Promise<IgnavFlight[]> => {
   const dateString = new Date(date).toISOString().split('T')[0];
   const RPA_WEBHOOK_SECRET = process.env.RPA_WEBHOOK_SECRET || 'secret-rpa-key';
-  const rpaUrl = process.env.RPA_API_URL || 'http://localhost:4000';
+  let rpaUrl = process.env.RPA_API_URL || 'http://localhost:4000';
+  if (!rpaUrl.startsWith('http://') && !rpaUrl.startsWith('https://')) {
+    rpaUrl = 'http://' + rpaUrl;
+  }
 
   console.log(`[kayakSearch] ${origin} -> ${destination} para ${dateString}`);
   console.log(`[kayakSearch] RPA URL: ${rpaUrl}`);
