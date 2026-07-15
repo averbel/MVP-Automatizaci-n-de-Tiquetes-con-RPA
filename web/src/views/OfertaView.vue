@@ -1,5 +1,5 @@
 <template>
-  <main class="min-h-screen relative overflow-hidden font-sans text-slate-800 bg-slate-900 py-12 px-4 sm:px-6 lg:px-8">
+  <main class="min-h-screen relative overflow-hidden font-sans text-slate-100 bg-slate-950 py-12 px-4 sm:px-6 lg:px-8">
     <!-- Background Image -->
     <div class="absolute inset-0 z-0">
       <img src="/airline_bg.png" alt="Airline Background" class="w-full h-full object-cover opacity-60" />
@@ -18,7 +18,7 @@
 
       <div v-if="loading" class="flex justify-center p-12 animate-fade-in-up">
         <div class="glass-dark p-8 rounded-full shadow-2xl flex items-center space-x-4 border border-white/10">
-          <svg class="animate-spin h-8 w-8 text-amber-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <svg class="animate-spin h-8 w-8 text-cyan-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
@@ -33,8 +33,8 @@
 
       <div v-else-if="oferta" class="animate-slide-in-right relative shadow-2xl">
         <!-- Boarding Pass Top Section -->
-        <div class="bg-white rounded-t-[2rem] overflow-hidden perforated-edge relative z-20">
-          <div class="bg-gradient-to-r from-blue-900 to-slate-800 p-8 text-white relative overflow-hidden">
+        <div class="glass-dark rounded-t-[2rem] border-glow border-b-0 overflow-hidden perforated-edge relative z-20">
+          <div class="bg-gradient-to-r from-cyan-900/50 to-slate-900/80 backdrop-blur-md border-b border-white/10 p-8 text-white relative overflow-hidden">
             <div class="absolute top-0 right-0 opacity-10">
                <svg class="w-64 h-64 -mt-16 -mr-16" fill="currentColor" viewBox="0 0 24 24"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>
             </div>
@@ -45,7 +45,7 @@
                 <h2 class="text-4xl font-black tracking-tight">{{ oferta.aerolinea }}</h2>
               </div>
               <div class="text-right">
-                <div class="bg-amber-400 text-amber-900 font-bold px-3 py-1 rounded-full text-sm inline-block mb-2 shadow-lg">
+                <div class="bg-cyan-500 text-slate-900 shadow-[0_0_10px_rgba(6,182,212,0.5)] font-bold px-3 py-1 rounded-full text-sm inline-block mb-2 shadow-lg">
                   BUSINESS CLASS
                 </div>
                 <p class="text-slate-300 text-xs uppercase tracking-widest">Costo Estimado</p>
@@ -54,28 +54,28 @@
             </div>
           </div>
 
-          <div class="p-8 pb-10 bg-white">
+          <div class="p-8 pb-10 bg-transparent">
             <div class="grid grid-cols-2 gap-8 relative">
               <div class="space-y-6">
                  <div>
                    <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Escalas</p>
-                   <p class="text-xl font-bold text-slate-800">{{ oferta.escalas === 0 ? 'Directo' : oferta.escalas + ' escala(s)' }}</p>
+                   <p class="text-xl font-bold text-white">{{ oferta.escalas === 0 ? 'Directo' : oferta.escalas + ' escala(s)' }}</p>
                  </div>
                  <div>
                    <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Score IA</p>
                    <div class="flex items-center">
-                     <span class="text-2xl font-black text-green-600 mr-2">{{ oferta.score ? oferta.score.toFixed(1) : 100 }}</span>
+                     <span class="text-2xl font-black text-green-400 mr-2">{{ oferta.score ? oferta.score.toFixed(1) : 100 }}</span>
                      <span class="text-slate-400 font-medium">/ 100</span>
                    </div>
                  </div>
               </div>
 
-              <div class="space-y-2 border-l-2 border-dashed border-slate-200 pl-8">
+              <div class="space-y-2 border-l-2 border-dashed border-slate-700 pl-8">
                  <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center">
-                   <svg class="w-4 h-4 mr-1 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                   <svg class="w-4 h-4 mr-1 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
                    Análisis de IA
                  </p>
-                 <p class="text-slate-700 font-medium italic leading-relaxed text-sm bg-slate-50 p-4 rounded-xl border border-slate-100">
+                 <p class="text-slate-300 font-medium italic leading-relaxed text-sm bg-slate-900/50 p-4 rounded-xl border border-slate-700/50">
                    "{{ oferta.explicacionIA }}"
                  </p>
               </div>
@@ -84,19 +84,19 @@
         </div>
 
         <!-- Boarding Pass Bottom Section -->
-        <div class="bg-slate-100 rounded-b-[2rem] p-8 pt-10 border-t border-slate-200 shadow-inner relative z-10">
+        <div class="glass-dark rounded-b-[2rem] p-8 pt-10 border-t border-dashed border-slate-700 shadow-inner border-glow relative z-10">
           <div class="flex space-x-4">
-            <button @click="confirmar(true)" :disabled="procesando" class="flex-1 bg-slate-900 hover:bg-black text-white font-bold py-5 px-6 rounded-xl transition-all shadow-xl hover:shadow-2xl text-lg flex items-center justify-center border border-slate-700 hover:-translate-y-1">
+            <button @click="confirmar(true)" :disabled="procesando" class="flex-1 bg-cyan-600 hover:bg-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.4)] border-none text-white font-bold py-5 px-6 rounded-xl transition-all shadow-xl hover:shadow-2xl text-lg flex items-center justify-center border border-slate-700 hover:-translate-y-1">
               <span v-if="procesando" class="flex items-center">
                 <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                 Emitiendo...
               </span>
               <span v-else class="flex items-center">
                 Confirmar Emisión
-                <svg class="ml-2 w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                <svg class="ml-2 w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
               </span>
             </button>
-            <button @click="confirmar(false)" :disabled="procesando" class="bg-white hover:bg-red-50 text-red-600 font-bold py-5 px-8 rounded-xl border border-red-200 transition-all shadow-sm text-lg flex items-center justify-center group">
+            <button @click="confirmar(false)" :disabled="procesando" class="bg-slate-800 hover:bg-red-900/30 text-red-400 border-red-900/50 font-bold py-5 px-8 rounded-xl border border-red-200 transition-all shadow-sm text-lg flex items-center justify-center group">
               <span class="group-hover:scale-105 transition-transform">Rechazar</span>
             </button>
           </div>

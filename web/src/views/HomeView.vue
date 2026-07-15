@@ -1,5 +1,5 @@
 <template>
-  <main class="min-h-screen relative overflow-hidden font-sans text-slate-800 bg-slate-900">
+  <main class="min-h-screen relative overflow-hidden font-sans text-slate-100 bg-slate-950">
     <div class="absolute inset-0 z-0">
       <img src="/airline_bg.png" alt="Airline Background" class="w-full h-full object-cover opacity-80" />
       <div class="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-900/80 to-transparent"></div>
@@ -21,47 +21,47 @@
       </div>
 
       <div class="lg:w-1/2 w-full max-w-2xl animate-slide-in-right">
-        <div class="glass rounded-[2rem] shadow-2xl overflow-hidden border border-white/40">
+        <div class="glass-dark rounded-[2rem] shadow-2xl overflow-hidden border-glow">
           <div class="p-8 sm:p-12 space-y-8">
             <div class="space-y-2">
-              <h2 class="text-2xl font-bold text-slate-900">Nueva Solicitud</h2>
-              <p class="text-slate-600">Completa los detalles para tu proximo destino.</p>
+              <h2 class="text-2xl font-bold text-white">Nueva Solicitud</h2>
+              <p class="text-slate-400">Completa los detalles para tu proximo destino.</p>
             </div>
 
             <form @submit.prevent="handleSubmit" class="space-y-8">
               <div class="space-y-5">
-                <div class="flex items-center space-x-3 border-b border-slate-200/60 pb-2">
-                  <div class="bg-blue-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">1</div>
-                  <h3 class="font-semibold text-slate-800">Datos del Viajero</h3>
+                <div class="flex items-center space-x-3 border-b border-slate-700/60 pb-2">
+                  <div class="bg-cyan-500 text-slate-950 shadow-[0_0_10px_rgba(6,182,212,0.6)] w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">1</div>
+                  <h3 class="font-semibold text-white">Datos del Viajero</h3>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                   <div>
-                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Nombre Completo</label>
-                    <input v-model="form.nombre" type="text" required class="w-full bg-white/60 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-sm" />
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Nombre Completo</label>
+                    <input v-model="form.nombre" type="text" required class="w-full bg-slate-900/50 border border-cyan-500/20 text-white placeholder-slate-500 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:bg-slate-900 transition-all shadow-inner focus:border-cyan-400" />
                   </div>
                   <div>
-                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Identificacion</label>
-                    <input v-model="form.identificacion" type="text" required class="w-full bg-white/60 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-sm" />
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Identificacion</label>
+                    <input v-model="form.identificacion" type="text" required class="w-full bg-slate-900/50 border border-cyan-500/20 text-white placeholder-slate-500 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:bg-slate-900 transition-all shadow-inner focus:border-cyan-400" />
                   </div>
                   <div>
-                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Tu Correo</label>
-                    <input v-model="form.email" type="email" required class="w-full bg-white/60 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-sm" />
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Tu Correo</label>
+                    <input v-model="form.email" type="email" required class="w-full bg-slate-900/50 border border-cyan-500/20 text-white placeholder-slate-500 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:bg-slate-900 transition-all shadow-inner focus:border-cyan-400" />
                   </div>
                   <div>
-                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Correo Aprobador</label>
-                    <input v-model="form.aprobadorEmail" type="email" required class="w-full bg-white/60 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-sm" />
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Correo Aprobador</label>
+                    <input v-model="form.aprobadorEmail" type="email" required class="w-full bg-slate-900/50 border border-cyan-500/20 text-white placeholder-slate-500 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:bg-slate-900 transition-all shadow-inner focus:border-cyan-400" />
                   </div>
                   <div>
-                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Telefono</label>
-                    <input v-model="form.telefono" type="tel" class="w-full bg-white/60 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-sm" />
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Telefono</label>
+                    <input v-model="form.telefono" type="tel" class="w-full bg-slate-900/50 border border-cyan-500/20 text-white placeholder-slate-500 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:bg-slate-900 transition-all shadow-inner focus:border-cyan-400" />
                   </div>
                   <div>
-                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Fecha Nacimiento</label>
-                    <input v-model="form.fechaNacimiento" type="date" class="w-full bg-white/60 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-sm" />
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Fecha Nacimiento</label>
+                    <input v-model="form.fechaNacimiento" type="date" class="w-full bg-slate-900/50 border border-cyan-500/20 text-white placeholder-slate-500 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:bg-slate-900 transition-all shadow-inner focus:border-cyan-400" />
                   </div>
                   <div>
-                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Genero</label>
-                    <select v-model="form.genero" class="w-full bg-white/60 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-sm">
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Genero</label>
+                    <select v-model="form.genero" class="w-full bg-slate-900/50 border border-cyan-500/20 text-white placeholder-slate-500 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:bg-slate-900 transition-all shadow-inner focus:border-cyan-400">
                       <option value="">Seleccionar...</option>
                       <option value="M">Masculino</option>
                       <option value="F">Femenino</option>
@@ -72,42 +72,42 @@
               </div>
 
               <div class="space-y-5">
-                <div class="flex items-center space-x-3 border-b border-slate-200/60 pb-2">
-                  <div class="bg-blue-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">2</div>
-                  <h3 class="font-semibold text-slate-800">Itinerario y Preferencias</h3>
+                <div class="flex items-center space-x-3 border-b border-slate-700/60 pb-2">
+                  <div class="bg-cyan-500 text-slate-950 shadow-[0_0_10px_rgba(6,182,212,0.6)] w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">2</div>
+                  <h3 class="font-semibold text-white">Itinerario y Preferencias</h3>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                   <div>
-                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Origen</label>
-                    <input v-model="form.origen" type="text" required placeholder="Ej. BOG" class="w-full bg-white/60 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-sm uppercase font-bold text-slate-800" />
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Origen</label>
+                    <input v-model="form.origen" type="text" required placeholder="Ej. BOG" class="w-full bg-slate-900/50 border border-cyan-500/20 text-white placeholder-slate-500 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:bg-slate-900 transition-all shadow-inner focus:border-cyan-400 uppercase font-bold text-white" />
                   </div>
                   <div>
-                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Destino</label>
-                    <input v-model="form.destino" type="text" required placeholder="Ej. MDE" class="w-full bg-white/60 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-sm uppercase font-bold text-slate-800" />
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Destino</label>
+                    <input v-model="form.destino" type="text" required placeholder="Ej. MDE" class="w-full bg-slate-900/50 border border-cyan-500/20 text-white placeholder-slate-500 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:bg-slate-900 transition-all shadow-inner focus:border-cyan-400 uppercase font-bold text-white" />
                   </div>
                   <div>
-                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Salida</label>
-                    <input v-model="form.fechaSalida" type="datetime-local" required class="w-full bg-white/60 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-sm" />
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Salida</label>
+                    <input v-model="form.fechaSalida" type="datetime-local" required class="w-full bg-slate-900/50 border border-cyan-500/20 text-white placeholder-slate-500 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:bg-slate-900 transition-all shadow-inner focus:border-cyan-400" />
                   </div>
                   <div>
-                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Regreso (Opc)</label>
-                    <input v-model="form.fechaRegreso" type="datetime-local" class="w-full bg-white/60 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-sm" />
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Regreso (Opc)</label>
+                    <input v-model="form.fechaRegreso" type="datetime-local" class="w-full bg-slate-900/50 border border-cyan-500/20 text-white placeholder-slate-500 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:bg-slate-900 transition-all shadow-inner focus:border-cyan-400" />
                   </div>
                   <div>
-                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Presupuesto USD</label>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Presupuesto USD</label>
                     <div class="relative">
                       <span class="absolute left-3 top-3.5 text-slate-400 font-bold">$</span>
-                      <input v-model.number="form.presupuesto" type="number" required min="1" step="0.01" class="w-full bg-white/60 border border-slate-200 rounded-xl pl-8 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-sm font-medium" />
+                      <input v-model.number="form.presupuesto" type="number" required min="1" step="0.01" class="w-full bg-slate-900/50 border border-cyan-500/20 text-white placeholder-slate-500 rounded-xl pl-8 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:bg-slate-900 transition-all shadow-inner focus:border-cyan-400 font-medium" />
                     </div>
                   </div>
                   <div>
-                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Centro Costos</label>
-                    <input v-model="form.centroCostos" type="text" required class="w-full bg-white/60 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-sm" />
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Centro Costos</label>
+                    <input v-model="form.centroCostos" type="text" required class="w-full bg-slate-900/50 border border-cyan-500/20 text-white placeholder-slate-500 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:bg-slate-900 transition-all shadow-inner focus:border-cyan-400" />
                   </div>
                 </div>
               </div>
 
-              <button type="submit" :disabled="loading" class="w-full flex justify-center items-center py-4 px-6 rounded-xl text-lg font-bold text-white transition-all shadow-xl hover:shadow-blue-500/30 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed">
+              <button type="submit" :disabled="loading" class="w-full flex justify-center items-center py-4 px-6 rounded-xl text-lg font-bold text-white transition-all shadow-xl hover:shadow-blue-500/30 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 shadow-[0_0_15px_rgba(6,182,212,0.4)] hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed">
                 <div v-if="loading" class="flex items-center">
                   <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                   Buscando vuelos...
@@ -124,11 +124,11 @@
     <div v-else-if="estado === 'BUSCANDO_VUELOS'" class="relative z-10 min-h-screen flex items-center justify-center p-4">
       <div class="max-w-md w-full glass rounded-3xl shadow-2xl p-10 text-center space-y-6 animate-fade-in-up">
         <div class="relative w-24 h-24 mx-auto flex items-center justify-center">
-          <div class="absolute inset-0 border-4 border-blue-500/30 rounded-full animate-ping"></div>
-          <div class="absolute inset-2 border-4 border-t-blue-600 rounded-full animate-spin"></div>
-          <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M12 5l7 7-7 7" /></svg>
+          <div class="absolute inset-0 border-4 border-cyan-500/30 rounded-full animate-ping"></div>
+          <div class="absolute inset-2 border-4 border-t-cyan-500 rounded-full animate-spin"></div>
+          <svg class="w-8 h-8 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M12 5l7 7-7 7" /></svg>
         </div>
-        <h2 class="text-3xl font-bold text-slate-900">Buscando Vuelos...</h2>
+        <h2 class="text-3xl font-bold text-white">Buscando Vuelos...</h2>
         <p class="text-slate-700 font-medium">Nuestra IA esta consultando tarifas y analizando la mejor opcion. Esto puede tardar unos segundos.</p>
       </div>
     </div>
@@ -139,21 +139,21 @@
         <div class="w-24 h-24 bg-red-500/20 text-red-500 rounded-full flex items-center justify-center mx-auto backdrop-blur-md">
           <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
         </div>
-        <h2 class="text-3xl font-bold text-slate-900">No se encontraron vuelos</h2>
+        <h2 class="text-3xl font-bold text-white">No se encontraron vuelos</h2>
         <p class="text-slate-700 font-medium">No hay vuelos disponibles para esta ruta y fecha dentro de tu presupuesto.</p>
-        <button @click="resetFlow" class="w-full bg-slate-900 hover:bg-slate-700 text-white font-semibold py-4 rounded-xl transition-colors">Volver al Inicio</button>
+        <button @click="resetFlow" class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white font-semibold py-4 rounded-xl transition-colors">Volver al Inicio</button>
       </div>
     </div>
 
     <!-- PANTALLA 4: RESULTADOS VUELOS -->
-    <div v-else-if="estado === 'SELECCIONANDO_VUELO'" class="relative z-10 min-h-screen p-8 lg:p-24 animate-fade-in-up text-slate-800">
+    <div v-else-if="estado === 'SELECCIONANDO_VUELO'" class="relative z-10 min-h-screen p-8 lg:p-24 animate-fade-in-up text-white">
       <div class="max-w-6xl mx-auto">
         <h2 class="text-4xl font-bold text-white text-glow mb-2">Vuelos Disponibles</h2>
         <p class="text-slate-300 mb-8 text-lg">La IA ha calificado estas opciones segun la politica de viajes.</p>
 
         <div v-if="opcionesVuelo.length > 0" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div v-for="(vuelo, index) in opcionesVuelo" :key="vuelo.id"
-               class="bg-white rounded-3xl shadow-xl overflow-hidden flex flex-col transform transition hover:-translate-y-2 hover:shadow-2xl"
+               class="glass-dark rounded-3xl border-glow shadow-xl overflow-hidden flex flex-col transform transition hover:-translate-y-2 hover:shadow-2xl"
                :class="{'ring-4 ring-amber-400': index === 0}">
 
             <div v-if="index === 0" class="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-center py-2 font-bold uppercase tracking-wider text-sm">
@@ -162,13 +162,13 @@
 
             <div class="p-6 flex-grow space-y-4">
               <div class="flex justify-between items-center border-b pb-4">
-                <span class="text-2xl font-black text-slate-900">{{ vuelo.airline }}</span>
-                <span class="text-3xl font-bold text-blue-600">${{ vuelo.priceUSD }}</span>
+                <span class="text-2xl font-black text-white">{{ vuelo.airline }}</span>
+                <span class="text-3xl font-bold text-cyan-400">${{ vuelo.priceUSD }}</span>
               </div>
 
-              <div class="flex justify-between items-center text-sm text-slate-600">
+              <div class="flex justify-between items-center text-sm text-slate-400">
                 <div class="text-center">
-                  <p class="font-bold text-slate-800 text-lg">{{ formatTime(vuelo.departureTime) }}</p>
+                  <p class="font-bold text-white text-lg">{{ formatTime(vuelo.departureTime) }}</p>
                   <p>Salida</p>
                 </div>
                 <div class="flex-grow text-center px-4">
@@ -178,19 +178,19 @@
                   </div>
                 </div>
                 <div class="text-center">
-                  <p class="font-bold text-slate-800 text-lg">{{ formatTime(vuelo.arrivalTime) }}</p>
+                  <p class="font-bold text-white text-lg">{{ formatTime(vuelo.arrivalTime) }}</p>
                   <p>Llegada</p>
                 </div>
               </div>
 
-              <div class="bg-blue-50 p-4 rounded-xl text-sm text-blue-900 border border-blue-100">
+              <div class="bg-cyan-950/50 p-4 rounded-xl text-sm text-cyan-100 border border-cyan-500/30">
                 <p><strong>Score IA: {{ vuelo.score }}/100</strong></p>
                 <p class="italic mt-1">"{{ vuelo.explicacion }}"</p>
               </div>
             </div>
 
-            <div class="p-6 bg-slate-50 border-t border-slate-100">
-              <button @click="comprarVuelo(vuelo)" class="w-full bg-slate-900 hover:bg-blue-600 text-white font-bold py-3 rounded-xl transition-colors">
+            <div class="p-6 border-t border-slate-700/50">
+              <button @click="comprarVuelo(vuelo)" class="w-full bg-slate-900 hover:bg-cyan-600 text-white font-bold py-3 rounded-xl transition-colors">
                 Elegir y Comprar
               </button>
             </div>
@@ -198,7 +198,7 @@
         </div>
         <div v-else class="max-w-md mx-auto text-center glass rounded-3xl shadow-2xl p-10 space-y-6">
           <h2 class="text-3xl font-bold text-white">No se encontraron vuelos</h2>
-          <button @click="resetFlow" class="w-full bg-slate-900 hover:bg-slate-700 text-white font-semibold py-4 rounded-xl transition-colors">Volver al Inicio</button>
+          <button @click="resetFlow" class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white font-semibold py-4 rounded-xl transition-colors">Volver al Inicio</button>
         </div>
       </div>
     </div>
@@ -209,10 +209,10 @@
         <div class="w-24 h-24 mx-auto text-indigo-500 animate-pulse flex items-center justify-center">
           <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
         </div>
-        <h2 class="text-3xl font-bold text-slate-900">El Bot RPA esta comprando tu vuelo</h2>
+        <h2 class="text-3xl font-bold text-white">El Bot RPA esta comprando tu vuelo</h2>
         <p class="text-slate-700 font-medium">El robot esta navegando el sitio de la aerolinea, llenando tus datos y finalizando la reserva.</p>
-        <div class="w-full bg-slate-200 rounded-full h-2 mt-4 overflow-hidden">
-          <div class="bg-indigo-600 h-2 rounded-full w-full animate-pulse"></div>
+        <div class="w-full bg-slate-800 rounded-full border border-slate-700 h-2 mt-4 overflow-hidden">
+          <div class="bg-cyan-500 h-2 shadow-[0_0_10px_rgba(6,182,212,0.8)] rounded-full w-full animate-pulse"></div>
         </div>
       </div>
     </div>
@@ -223,15 +223,15 @@
         <div class="w-24 h-24 bg-green-500/20 text-green-600 rounded-full flex items-center justify-center mx-auto backdrop-blur-md">
           <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
         </div>
-        <h2 class="text-3xl font-bold text-slate-900">Proceso Terminado!</h2>
+        <h2 class="text-3xl font-bold text-white">Proceso Terminado!</h2>
         <p class="text-slate-700 font-medium">El bot compro tu vuelo exitosamente. Recibiras los tiquetes en tu correo.</p>
 
         <div v-if="capturaResult" class="mt-6">
-          <p class="text-sm font-semibold text-slate-500 mb-2 uppercase tracking-wider">Evidencia del Bot</p>
+          <p class="text-sm font-semibold text-slate-400 mb-2 uppercase tracking-wider">Evidencia del Bot</p>
           <img :src="capturaResult" class="w-full rounded-xl shadow-lg border-2 border-slate-200" alt="Captura RPA" />
         </div>
 
-        <button @click="resetFlow" class="w-full bg-slate-900 hover:bg-slate-700 text-white font-semibold py-4 rounded-xl transition-colors mt-6">Volver al Inicio</button>
+        <button @click="resetFlow" class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white font-semibold py-4 rounded-xl transition-colors mt-6">Volver al Inicio</button>
       </div>
     </div>
   </main>
