@@ -485,30 +485,6 @@ async function runBot(bookingLink, passengerData, idempotencyKey, callbackUrl) {
 
       await targetPage.waitForTimeout(3000);
 
-      // Inyectar un banner de debug para ver la URL exacta y confirmar que el renderizado funciona
-      await targetPage.evaluate(() => {
-        try {
-          const div = document.createElement('div');
-          div.style.position = 'fixed';
-          div.style.top = '10px';
-          div.style.left = '10px';
-          div.style.zIndex = '2147483647'; // max z-index
-          div.style.backgroundColor = 'rgba(0,0,0,0.9)';
-          div.style.color = '#00ff00';
-          div.style.padding = '15px';
-          div.style.border = '2px solid #00ff00';
-          div.style.borderRadius = '8px';
-          div.style.fontSize = '18px';
-          div.style.fontFamily = 'monospace';
-          div.style.maxWidth = '90%';
-          div.style.wordWrap = 'break-word';
-          div.innerHTML = '<strong>RPA DEBUG INFO:</strong><br/>' + window.location.href;
-          document.body.appendChild(div);
-        } catch (e) {}
-      }).catch(() => {});
-
-      await targetPage.waitForTimeout(1000);
-
       screenshotPath = path.join(SCREENSHOTS_DIR, `${idempotencyKey}_final_success.png`);
       await targetPage.screenshot({ path: screenshotPath });
 
