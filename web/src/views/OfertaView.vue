@@ -2,8 +2,8 @@
   <main class="min-h-screen relative overflow-hidden font-sans text-slate-100 bg-slate-950 py-12 px-4 sm:px-6 lg:px-8">
     <!-- Background Image -->
     <div class="absolute inset-0 z-0">
-      <img src="/airline_bg.png" alt="Airline Background" class="w-full h-full object-cover opacity-60" />
-      <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent"></div>
+      <img src="/premium_travel_bg.png" alt="Airline Background" class="w-full h-full object-cover opacity-80" />
+      <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/80 to-transparent"></div>
     </div>
 
     <div class="relative z-10 max-w-3xl mx-auto space-y-8 mt-10">
