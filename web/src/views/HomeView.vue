@@ -1,7 +1,7 @@
 <template>
   <main class="min-h-screen relative overflow-hidden font-sans text-slate-100 bg-slate-950">
     <div class="absolute inset-0 z-0">
-      <img src="/airline_bg.png" alt="Airline Background" class="w-full h-full object-cover opacity-80" />
+      <img src="/premium_travel_bg.png" class="w-full h-full object-cover opacity-20" />
       <div class="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-900/80 to-transparent"></div>
     </div>
 
