@@ -290,6 +290,12 @@ const fetchVuelos = async () => {
     });
 
     const data = await res.json();
+    
+    if (data.success === false && data.error) {
+      alert('Error en el bot: ' + data.error);
+      estado.value = 'SIN_OPCIONES';
+      return;
+    }
 
     if (data.options && data.options.length > 0) {
       opcionesVuelo.value = data.options;

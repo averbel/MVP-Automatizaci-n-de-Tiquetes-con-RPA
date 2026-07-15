@@ -64,6 +64,6 @@ export default async function handler(req: Request, res: Response) {
         data: { estado: 'FALLIDA' }
       });
     } catch (_) {}
-    return res.status(200).json({ success: false, error: 'Search failed', options: [] });
+    return res.status(200).json({ success: false, error: error.message || 'Search failed', options: [] });
   }
 }
