@@ -467,7 +467,7 @@ async function runBot(bookingLink, passengerData, idempotencyKey, callbackUrl) {
 
       // Screenshot del paso 4
       const p4Screenshot = path.join(SCREENSHOTS_DIR, `${idempotencyKey}_p4_after_continue.png`);
-      await targetPage.screenshot({ path: p4Screenshot, fullPage: true }).catch(() => {});
+      await targetPage.screenshot({ path: p4Screenshot }).catch(() => {});
 
       if (callbackUrl) {
         try {
@@ -484,7 +484,7 @@ async function runBot(bookingLink, passengerData, idempotencyKey, callbackUrl) {
       console.log('[RPA] Captura final antes del pago (NO se presiona pagar por seguridad).');
 
       screenshotPath = path.join(SCREENSHOTS_DIR, `${idempotencyKey}_final_success.png`);
-      await targetPage.screenshot({ path: screenshotPath, fullPage: true });
+      await targetPage.screenshot({ path: screenshotPath });
 
       success = true;
       console.log(`[RPA] Éxito en el intento ${attempts}!`);
