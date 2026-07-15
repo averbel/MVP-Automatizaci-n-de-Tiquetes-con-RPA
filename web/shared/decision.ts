@@ -10,24 +10,42 @@ export const rankFlights = (
   presupuestoMax: number,
   preferenciaAerolinea: string | null
 ): ScoredFlight[] => {
-  const validFlights = flights.filter(f => f.priceUSD <= presupuestoMax);
+  let validFlights = flights.filter(f => f.priceUSD <= presupuestoMax);
+  let overBudget = false;
+
+  // Si ningun vuelo esta dentro del presupuesto, usar todos y marcarlos
+  if (validFlights.length === 0 && flights.length > 0) {
+    validFlights = [...flights];
+    overBudget = true;
+  }
 
   const scored = validFlights.map(flight => {
     let score = 100;
-    score -= Math.min(flight.priceUSD / 10, 50);
+    
+    if (flight.priceUSD > presupuestoMax) {
+      score -= 40; // Penalidad severa por salir del presupuesto
+    } else {
+      score -= Math.min(flight.priceUSD / 10, 30);
+    }
+    
     score -= flight.stops * 20;
 
     if (preferenciaAerolinea && flight.airline.toUpperCase() === preferenciaAerolinea.toUpperCase()) {
-      score += 30;
+      score += 20;
     }
 
-    const expl = `Opcion recomendada. $${flight.priceUSD} dentro del presupuesto de $${presupuestoMax}. ${
-      flight.stops === 0 ? 'Vuelo directo.' : `${flight.stops} escala(s).`
-    }${
-      preferenciaAerolinea && flight.airline.toUpperCase() === preferenciaAerolinea.toUpperCase()
-        ? ' Aerolinea preferida.'
-        : ''
-    }`;
+    let expl = flight.priceUSD > presupuestoMax 
+      ? `Fuera de presupuesto por $${flight.priceUSD - presupuestoMax}. `
+      : `Opcion recomendada. $${flight.priceUSD} dentro del presupuesto. `;
+
+    expl += flight.stops === 0 ? 'Vuelo directo.' : `${flight.stops} escala(s).`;
+    
+    if (preferenciaAerolinea && flight.airline.toUpperCase() === preferenciaAerolinea.toUpperCase()) {
+      expl += ' Aerolinea preferida.';
+    }
+
+    // Asegurar que el score no sea negativo
+    score = Math.max(0, Math.round(score));
 
     return { ...flight, score, explicacion: expl };
   });
