@@ -141,7 +141,10 @@
         </div>
         <h2 class="text-3xl font-bold text-white">No se encontraron vuelos</h2>
         <p class="text-slate-700 font-medium">No hay vuelos disponibles para esta ruta y fecha dentro de tu presupuesto.</p>
-        <button @click="resetFlow" class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white font-semibold py-4 rounded-xl transition-colors">Volver al Inicio</button>
+        <div v-if="errorMessage" class="bg-red-500/10 border border-red-500/30 text-red-400 p-4 rounded-xl text-sm mt-4 text-left font-mono">
+          <strong>Error técnico detectado:</strong><br/>{{ errorMessage }}
+        </div>
+        <button @click="resetFlow" class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white font-semibold py-4 rounded-xl transition-colors mt-6">Volver al Inicio</button>
       </div>
     </div>
 
@@ -245,6 +248,7 @@ const loading = ref(false);
 const currentSolicitudId = ref('');
 const opcionesVuelo = ref<any[]>([]);
 const capturaResult = ref<string | null>(null);
+const errorMessage = ref<string>('');
 let pollInterval: ReturnType<typeof setInterval> | null = null;
 
 const form = ref({
@@ -300,14 +304,19 @@ const handleSubmit = async () => {
       body: JSON.stringify(payload),
     });
 
-    if (!res.ok) throw new Error('Error al enviar la solicitud');
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`Error ${res.status}: ${errText}`);
+    }
 
     const data = await res.json();
     currentSolicitudId.value = data.solicitudId;
     estado.value = 'BUSCANDO_VUELOS';
+    errorMessage.value = '';
     await fetchVuelos();
-  } catch {
-    alert('Error de conexion con el servidor.');
+  } catch (err: any) {
+    errorMessage.value = err.message || 'Error de conexión con el servidor.';
+    estado.value = 'SIN_OPCIONES';
   } finally {
     loading.value = false;
   }
@@ -324,7 +333,7 @@ const fetchVuelos = async () => {
     const data = await res.json();
     
     if (data.success === false && data.error) {
-      alert('Error en el bot: ' + data.error);
+      errorMessage.value = data.error;
       estado.value = 'SIN_OPCIONES';
       return;
     }
@@ -401,6 +410,7 @@ const resetFlow = () => {
   estado.value = 'FORM';
   opcionesVuelo.value = [];
   capturaResult.value = null;
+  errorMessage.value = '';
   currentSolicitudId.value = '';
   form.value = {
     nombre: '', identificacion: '', email: '', aprobadorEmail: '',
