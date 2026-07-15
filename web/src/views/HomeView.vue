@@ -87,11 +87,11 @@
                   </div>
                   <div>
                     <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Salida</label>
-                    <input v-model="form.fechaSalida" type="datetime-local" required class="w-full bg-slate-900/50 border border-cyan-500/20 text-white placeholder-slate-500 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:bg-slate-900 transition-all shadow-inner focus:border-cyan-400" />
+                    <input v-model="form.fechaSalida" type="date" required class="w-full bg-slate-900/50 border border-cyan-500/20 text-white placeholder-slate-500 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:bg-slate-900 transition-all shadow-inner focus:border-cyan-400" />
                   </div>
                   <div>
                     <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Regreso (Opc)</label>
-                    <input v-model="form.fechaRegreso" type="datetime-local" class="w-full bg-slate-900/50 border border-cyan-500/20 text-white placeholder-slate-500 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:bg-slate-900 transition-all shadow-inner focus:border-cyan-400" />
+                    <input v-model="form.fechaRegreso" type="date" class="w-full bg-slate-900/50 border border-cyan-500/20 text-white placeholder-slate-500 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:bg-slate-900 transition-all shadow-inner focus:border-cyan-400" />
                   </div>
                   <div>
                     <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Presupuesto USD</label>
