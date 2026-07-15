@@ -6,13 +6,13 @@
     </div>
 
     <!-- PANTALLA 1: FORMULARIO -->
-    <div v-if="estado === 'FORM'" class="relative z-10 container mx-auto px-4 py-12 lg:py-24 min-h-screen flex flex-col lg:flex-row items-center gap-12">
-      <div class="lg:w-1/2 space-y-8 animate-fade-in-up text-white">
+    <div v-if="estado === 'FORM'" class="relative z-10 container mx-auto px-4 py-12 lg:py-24 min-h-screen flex flex-col md:flex-row items-center gap-12">
+      <div class="md:w-1/2 space-y-8 animate-fade-in-up text-white">
         <div class="inline-flex items-center space-x-2 bg-white/10 px-4 py-2 rounded-full border border-white/20 backdrop-blur-sm">
           <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
           <span class="text-sm font-medium tracking-wide">Portal Corporativo Global</span>
         </div>
-        <h1 class="text-5xl lg:text-7xl font-extrabold tracking-tight text-glow">
+        <h1 class="text-5xl md:text-6xl font-extrabold tracking-tight text-glow">
           Eleva tus <span class="text-amber-400">viajes</span> de negocios.
         </h1>
         <p class="text-xl text-slate-300 max-w-xl font-light leading-relaxed">
@@ -20,7 +20,7 @@
         </p>
       </div>
 
-      <div class="lg:w-1/2 w-full max-w-2xl animate-slide-in-right">
+      <div class="md:w-1/2 w-full max-w-2xl animate-slide-in-right">
         <div class="glass-dark rounded-[2rem] shadow-2xl overflow-hidden border-glow">
           <div class="p-8 sm:p-12 space-y-8">
             <div class="space-y-2">
