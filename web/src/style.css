@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@source "./**/*.vue";
+@source "../index.html";
 
 @layer base {
   body {
